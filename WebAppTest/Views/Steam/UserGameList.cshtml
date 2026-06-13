@@ -1,0 +1,34 @@
+﻿<h1>Show user game list</h1>
+
+<form asp-action="GetUserGames" asp-controller="Steam" method="post">
+	<label for="userId">user Id</label>
+
+	<input type="text"
+		   id="userId"
+		   name="userId"
+		   class="form-control" />
+
+	<br />
+
+	<button type="submit"
+			class="btn btn-primary">
+		Search
+	</button>
+</form>
+
+<form asp-action="GetUserGameTagsValue" asp-controller="Steam" method="post">
+    <label for="userId">user Id</label>
+
+	<input type="text"
+           id="userId"
+           name="userId"
+           class="form-control" />
+
+    <br />
+
+    <button type="submit"
+            class="btn btn-primary">
+        Search
+    </button>
+</form>
+

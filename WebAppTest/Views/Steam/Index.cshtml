@@ -1,0 +1,35 @@
+﻿@* @using WebAppTest.DTOs
+@model SteamGameDto
+
+@{
+    ViewData["Title"] = "Добавление игры";
+}
+
+
+<div class="text-center">
+    <h1 class="display-4">Добавление игры</h1>
+</div>
+
+<form asp-action="CreateGame" asp-controller="Game">
+    <input hidden class="form-control" type="number" placeholder="0" asp-for="AppId" />
+
+    <label>Name</label>
+    <input class="form-control" type="text" asp-for="Name" />
+
+    <label>GameTags</label>
+    <input class="form-control" type="text" asp-for="GameTags" />
+
+    <label>Price</label>
+    <input class="form-control" type="number" placeholder="0" asp-for="Price" />
+
+    <label>PositiveReviews</label>
+    <input class="form-control" type="number" placeholder="0" asp-for="PositiveReviews" />
+
+    <label>NegativeReviews</label>
+    <input class="form-control" type="number" placeholder="0" asp-for="NegativeReviews" />
+
+    <label>Description</label>
+    <input class="form-control" type="text" asp-for="Description" />
+
+    <button class="btn btn-primary mt-4" type="submit">OK</button>
+</form> *@

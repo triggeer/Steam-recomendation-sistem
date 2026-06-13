@@ -1,0 +1,32 @@
+﻿@using WebAppTest.DTOs
+@model IEnumerable<UserGameDto>;
+
+<h1>Список игр</h1>
+
+<ul>
+    @foreach (var game in Model)
+    {
+        <div>
+            <h3>@game.Name</h3>
+            <p>
+                <b>AppId:</b> @game.AppId
+            </p>
+
+            <p>
+                <b>Минут в игре:</b> @game.PlayTime
+            </p>
+
+            <p>
+                <b>Жанры:</b>
+                @string.Join(", ", game.Genres)
+            </p>
+
+            <p>
+                <b>Теги:</b>
+                @string.Join(", ", game.Tags.Select(t => t.Name))
+            </p>
+        </div>
+    }
+</ul>
+
+

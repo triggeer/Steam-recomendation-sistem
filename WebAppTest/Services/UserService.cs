@@ -1,0 +1,246 @@
+﻿using System.Text.Json;
+using WebAppTest.Data;
+using WebAppTest.DTOs;
+using WebAppTest.Interfaces;
+using WebAppTest.Models;
+
+namespace WebAppTest.Services
+{
+	public class UserService : IUserService
+	{
+		private readonly AppDbContext _context;
+		private readonly HttpClient _httpClient;
+		private readonly ISteamService _steamService;
+		private readonly IDataGainService _dataGainService;
+		private readonly IConfiguration _configuration;
+
+		public UserService(
+		AppDbContext context, 
+		HttpClient httpClient, 
+		ISteamService steamService, 
+		IDataGainService dataGainService,
+		IConfiguration configuration)
+		{
+			_context = context;
+			_httpClient = httpClient;
+			_steamService = steamService;
+			_dataGainService = dataGainService;
+			_configuration = configuration;
+		}
+
+		public async Task<List<OwnedGameDto>> GetUserGamesIdList(string userId)
+		{
+			var apiKey = _configuration.GetValue<string>("Steam:ApiKey");
+			var url = $"https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={apiKey}&steamid={userId}&format=json";
+
+			var userGameList = new List<Game>();
+
+			var steamResponse = await _httpClient.GetAsync(url);
+			steamResponse.EnsureSuccessStatusCode();
+
+			var steamJson = await steamResponse.Content.ReadAsStringAsync();
+			var steamData = JsonSerializer.Deserialize<
+			Dictionary<string, UserGamesResponse>
+			>(steamJson);
+
+			List<OwnedGameDto> ownedGames = steamData["response"].games;
+			return ownedGames; // (id, часы)
+		}
+
+		public async Task<List<UserGameDto>> GetUserGames(string userId)
+		{
+			// получили спсиок (id, часы)
+			List<OwnedGameDto> list = await GetUserGamesIdList(userId);
+
+			// получаем только список id (все игры(id) пользователя)
+			var idList = list.Select(x => x.AppId).ToList();
+
+			// возвращаем список игр по id (которые сейчас есть в БД)
+			var dbGames = await _steamService.GetGameList(idList);
+
+			// создаем список id игр пользователя (idList), которых ещё нет в БД (dbGames)
+			var missingIds = idList.Except(dbGames.Select(g => g.SteamAppId)).ToList();
+
+			// для каждого id в отсутствующих id
+			foreach (var id in missingIds)
+			{
+				// добавляем игру с таким id
+				await _steamService.ImportGameAsync(id);
+			}
+
+			// обновляем данные в случае если нашлись отсутствующие в БД id
+			if (missingIds != null)
+			{
+				dbGames = await _steamService.GetGameList(idList);
+			}
+
+			// вводим словарь для "быстрого поиска"
+			var gameDictionary = dbGames.ToDictionary(g => g.SteamAppId);
+
+			// вводим список ИГОР (ТАМ ИМЯ, ЧАСЫ, ТЕГИ И ВСЯ ХЕРНЯ)
+			var games = new List<UserGameDto>();
+
+			// для каждого элемента из списка с id и минутами в игре
+			foreach (var gameObj in list)
+			{
+
+				/* 
+				 * если в словаре нет такого id -> добавляем игру с таким id
+					если в словаре нет 
+					попытаться найти игру, у которой id это gameObj.AppId
+					результат закладываем в переменную game
+						если игра с таким id есть - тогда game = эта игра
+						если нет, тогда game = null
+
+						*/
+				//Game? game = gameDictionary[gameObj.AppId];
+				if (!gameDictionary.TryGetValue(gameObj.AppId, out var game))
+				{
+					await _steamService.ImportGameAsync(gameObj.AppId); continue;
+				}
+
+				games.Add(new UserGameDto
+				{
+					AppId = gameObj.AppId,
+					PlayTime = gameObj.PlayTime,
+					Name = game.Name,
+					Genres = game.GameGenres.Select(x => x.Genre.Name).ToList(),
+					Tags = game.GameTags.Select(x => new SpyTagDto
+					{
+						Name = x.Tag.Name,
+						Weight = x.Weight
+					}).ToList(),
+				});
+			}
+			return games;
+		}
+
+		//public async Task<Dictionary<string, int>> GetUserGameTags(string userId)
+		//{
+		//	List<UserGameDto> games = await GetUserGames(userId);
+		//	var tags = new Dictionary<string, int>();
+		//	foreach (UserGameDto game in games)
+		//	{
+		//		foreach (SpyTagDto tag in game.Tags)
+		//		{
+		//			if (game.Tags != null)
+		//			{
+		//				// вводим счетчик вхождений для каждого тега
+		//				//int count = 0;
+		//				// если тег уже есть
+		//				if (tags.TryGetValue(tag.Name, out int currentValue))
+		//				{
+		//					tags[tag.Name] = currentValue + 1;
+		//				}
+		//				else
+		//				{
+		//					tags.Add(tag.Name, 1);
+		//				}
+		//			}
+		//			else continue;
+		//		}
+		//	}
+
+		//	var sortTags = tags.OrderByDescending(pair => pair.Value).ToDictionary(p => p.Key, p => p.Value);
+
+		//	return sortTags;
+		//}
+
+		//public async Task FormTagPrefList(string userId)
+		//{
+		//	// в словаре будут Тег: значимость 
+		//	var preference = new Dictionary<string, int>();
+		//	Dictionary<string, int> tagAmount = await GetUserGameTags(userId);
+
+		//}
+
+
+		/// ///////////////
+
+
+		public async Task<Dictionary<string, Dictionary<string, double>>> GetUserGameTags(string userId)
+		{				// RPG: {weight: 100, enterence: 3}
+			List<UserGameDto> games = await GetUserGames(userId);
+			var tags = new Dictionary<string, Dictionary<string, double>>();
+			foreach (UserGameDto game in games)
+			{
+				int weightConunt = 0;
+				foreach (SpyTagDto tag in game.Tags)
+				{
+					weightConunt += tag.Weight;
+				}
+
+				foreach (SpyTagDto tag in game.Tags)
+				{
+					if (game.Tags != null)
+					{
+						double tStrengh = (double)tag.Weight / weightConunt;
+						// вводим счетчик вхождений для каждого тега
+						//int count = 0;
+						// если тег уже есть
+						if (tags.TryGetValue(tag.Name, out Dictionary<string, double > currentInnerDict))
+						{   //	RPG:	  {weight: 100, ent: 4}
+							// НАДО НОРМАЛЬНО ВЕСА СДЕЛАТЬ!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+							/*
+							 * всего 20 тегов
+							 * "tags": {
+									"Souls-like": 9604, 0.11
+									"Dark Fantasy": 7905, 0.09
+									"Difficult": 6967, 0.08
+									"RPG": 5966, 0.07
+									"Atmospheric": 5311, 0.06
+									"Lore-Rich": 4544, 0.05
+									"Third Person": 4272, 0.05
+									"Exploration": 3797, 0.045
+									"Story Rich": 3779, 0.045 
+									"Action RPG": 3576, 0.04
+									"Co-op": 3499, 0.04
+									"Great Soundtrack": 3418, 0.04
+									"Adventure": 3307, 0.04
+									"Action": 3292, 0.04
+									"Multiplayer": 3214, 0.04
+									"PvP": 3161, 0.03
+									"Open World": 3080 0.03,
+									"Singleplayer": 2427, 0.025
+									"Character Customization": 1936, 0.02 
+									"Replay Value": 1926 0.02
+								  }
+								  86000
+								  для каждого тега вес / сумму всесов = релевантность (сила) тега
+								  если сила тега = +-0.1 - тег очень релевантный
+								  если ~ (0.4, 0.7) норм 
+								  если < 0.03 не очень релевантный 
+								  =>>>>> вычисляем силу тега и записываем её вместо всеа
+							 */
+							tags[tag.Name]["weight"] = currentInnerDict["weight"] + tStrengh;
+
+							tags[tag.Name]["enterence"] = currentInnerDict["enterence"]+1;
+						}
+						else
+						{
+							var innerDict = new Dictionary<string, double>();
+							innerDict.Add("weight", tStrengh);
+							innerDict.Add("enterence", 1);
+							tags.Add(tag.Name, innerDict);
+						}
+					}
+					else continue;
+				}
+			}
+
+			//var sortTags = tags.OrderByDescending(pair => pair.Value).ToDictionary(p => p.Key, p => p.Value);
+
+			return tags;
+		}
+	}
+}
+/* "RPG": {
+ * "weight": 100, 
+ * "enterence": 3
+ * }
+ * "MOBA" {
+ * "weight": 500,
+ * "enterence": 5
+ * }
+ * 
+ */

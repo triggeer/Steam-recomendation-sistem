@@ -1,0 +1,29 @@
+﻿@using WebAppTest.DTOs
+@model Dictionary<string, Dictionary<string, double>>;
+
+
+<h1>Список игр</h1>
+
+<ul>
+    @foreach (var tag in Model)
+    {
+        <div>
+            <h3>@tag.Key</h3>
+            <p>
+                @foreach (var innerPair in tag.Value)
+                {
+                    <p>
+						@innerPair.Key;
+                    </p>
+                    
+                    <p>
+						@innerPair.Value;
+                    </p>
+                    
+                }
+            </p>
+        </div>
+    }
+</ul>
+
+

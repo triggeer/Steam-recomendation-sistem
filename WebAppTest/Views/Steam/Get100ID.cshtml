@@ -1,0 +1,9 @@
+﻿@* @model List<int> *@
+<h1>IDs<</h1>
+
+<p>
+	@foreach (var id in @ViewBag.MyMessage)
+	{
+		<li class="list-group-item">ID: @id </li>
+	}
+</p>

@@ -1,0 +1,29 @@
+﻿@model WebAppTest.DTOs.GameResponse
+
+<h1>@Model.Name</h1>
+
+<p>
+    @Html.Raw(Model.DetailedDescription)
+</p>
+
+
+<h3>Жанры</h3>
+
+<ul>
+    @foreach (string gameGenre in Model.Genres)
+    {
+        <li>@gameGenre</li>
+    }
+</ul>
+
+<h3>Теги</h3>
+
+<ul>
+    @foreach (var gameTag in Model.Tags)
+    {
+        <li>@gameTag.Name (@gameTag.Weight)</li>
+    }
+</ul>
+
+<h3>Цена</h3>
+<p>@((Model.InitialPrice / 100.0).ToString("N2"))$</p>
