@@ -8,5 +8,10 @@ namespace WebAppTest.Interfaces
 		Task<List<UserGameDto>> GetUserGames(string userId);
 		//Task<Dictionary<string, int>> GetUserGameTags(string userId);
 		Task<Dictionary<string, Dictionary<string, double>>> GetUserGameTags(string userId);
+		Task<Dictionary<string, Dictionary<string, double>>> FormUserTagVector(string userId);
+		Task<Dictionary<string, Dictionary<string, double>>> FormGameTagVector(int gameId);
+		Task<Dictionary<string, Dictionary<string, double>>> GetGameTagsStrengh(int gameId);
+
+
 	}
 }

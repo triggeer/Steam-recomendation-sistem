@@ -1,4 +1,4 @@
-﻿<h1>Find Steam Game</h1>
+﻿<h1>Найти игру</h1>
 
 <form asp-action="GameDetails"
       asp-controller="Steam"
@@ -19,3 +19,24 @@
     </button>
 
 </form>
+
+
+<h1>Сформировать вектор силы тегов</h1>
+<form asp-action="FormGameTagsVector" asp-controller="Steam" method="get">
+    <label for="gameId">game Id</label>
+
+    <input type="text"
+           id="gameId"
+           name="gameId"
+           class="form-control" />
+
+    <br />
+
+    <button type="submit"
+            class="btn btn-primary">
+        Search
+    </button>
+</form>
+
+
+
