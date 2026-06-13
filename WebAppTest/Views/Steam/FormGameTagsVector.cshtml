@@ -2,7 +2,7 @@
 @model Dictionary<string, Dictionary<string, double>>;
 
 
-<h1>Список игр</h1>
+<h1>Вектор</h1>
 
 <ul>
     @foreach (var tag in Model)
@@ -15,7 +15,7 @@
                     <p>
                         @innerPair.Key: @innerPair.Value
                     </p>
-                    
+
                 }
             </p>
         </div>

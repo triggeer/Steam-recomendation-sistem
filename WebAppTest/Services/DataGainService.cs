@@ -78,7 +78,7 @@ namespace WebAppTest.Services
 		public async Task<Dictionary<string, int>> GetTags(int appId)
 		{
 			var tags = new Dictionary<string, int>();
-			var spyDto = await GetSpyData(appId);
+			SpyGameDto spyDto = await GetSpyData(appId);
 
 			if (spyDto.Tags.ValueKind == JsonValueKind.Object)
 			{

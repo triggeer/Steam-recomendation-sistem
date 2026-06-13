@@ -81,7 +81,7 @@ namespace WebAppTest.Services
 			var games = new List<UserGameDto>();
 
 			// для каждого элемента из списка с id и минутами в игре
-			foreach (var gameObj in list)
+			foreach (OwnedGameDto gameObj in list)
 			{
 
 				/* 
@@ -159,11 +159,13 @@ namespace WebAppTest.Services
 
 
 		public async Task<Dictionary<string, Dictionary<string, double>>> GetUserGameTags(string userId)
-		{				// RPG: {weight: 100, enterence: 3}
-			List<UserGameDto> games = await GetUserGames(userId);
+		{               // RPG: {weight: 100, enterence: 3}
+			int counter = 0;
+			List <UserGameDto> games = await GetUserGames(userId);
 			var tags = new Dictionary<string, Dictionary<string, double>>();
 			foreach (UserGameDto game in games)
 			{
+				counter++;
 				int weightConunt = 0;
 				foreach (SpyTagDto tag in game.Tags)
 				{
@@ -223,23 +225,117 @@ namespace WebAppTest.Services
 							innerDict.Add("enterence", 1);
 							tags.Add(tag.Name, innerDict);
 						}
+
 					}
 					else continue;
 				}
 			}
 
 			//var sortTags = tags.OrderByDescending(pair => pair.Value).ToDictionary(p => p.Key, p => p.Value);
+			foreach (var tag in tags)
+			{
+				//Dictionary<string, Dictionary<string, double>>
+				//string, Dictionary<string, double>
+				var currentWeight = tag.Value["weight"];
+				tag.Value["weight"] = currentWeight / tag.Value["enterence"];
+			}
 
 			return tags;
 		}
+
+		public async Task<Dictionary<string, Dictionary<string, double>>> FormUserTagVector(string userId)
+		{   /*
+		 	 * U = {
+					RPG: 0.82,
+					OpenWorld: 0.65,
+					Fantasy: 0.54,
+					SoulsLike: 0.71,
+					StoryRich: 0.33,
+					PvP: 0.05
+				}
+		 	 */
+			var vector = new Dictionary<string, Dictionary<string, double>> { [userId] = [] };
+
+			var tags = await GetUserGameTags(userId);
+			foreach (var tag in tags)
+			{
+				vector[userId].Add(tag.Key, tag.Value["weight"]);
+			}
+			return vector; // гуд
+		}
+
+		public async Task<Dictionary<string, Dictionary<string, double>>> FormGameTagVector(int gameId)
+		{
+			/*
+			 * DS3 = {
+					RPG: 0.82,
+					OpenWorld: 0.65,
+					Fantasy: 0.54,
+					SoulsLike: 0.71,
+					StoryRich: 0.33,
+					PvP: 0.05
+				}
+			 */
+			var vector = new Dictionary<string, Dictionary<string, double>>();
+			bool exist = await _dataGainService.CheckGameExistense(gameId);
+			if (!exist)
+			{
+				await _steamService.ImportGameAsync(gameId);	
+			}
+
+
+
+			return vector;
+		}
+		//							"123 (ds3)": {rpg:0.5, sols-like:0.7}
+		public async Task<Dictionary<string, Dictionary<string, double>>> GetGameTagsStrengh(int gameId)
+		{
+			bool exist = await _dataGainService.CheckGameExistense(gameId);
+			
+			if (!exist)
+			{
+				await _steamService.ImportGameAsync(gameId);
+			}
+
+			GameResponse game = await _steamService.GetGame(gameId);
+
+			var vector = new Dictionary<string, Dictionary<string, double>> { [gameId.ToString()] = [] };
+
+			int counter = 0;
+
+			foreach (SpyTagDto tag in game.Tags)
+			{
+				counter += tag.Weight;
+			}
+
+			foreach (SpyTagDto tag in game.Tags)
+			{
+				if (game.Tags != null)
+				{
+					double tStrengh = (double)tag.Weight / counter;
+					//				 "123 (ds3)":			 {rpg:			0.5,...}	
+					if (vector[gameId.ToString()].TryGetValue(tag.Name, out double currentValue))
+					{
+						vector[gameId.ToString()][tag.Name] = currentValue + tStrengh;
+					}
+					else
+					{//		        "123 (ds3)":	  {rpg:		0.5,...}	
+						vector[gameId.ToString()].Add(tag.Name, tStrengh);
+					}
+				}
+			}
+
+			return vector;
+		}
 	}
 }
+
 /* "RPG": {
- * "weight": 100, 
+ * "weight": 0.7, 
  * "enterence": 3
- * }
+ * },
  * "MOBA" {
- * "weight": 500,
+ * "weight": 0.3,
  * "enterence": 5
  * }
  * 
