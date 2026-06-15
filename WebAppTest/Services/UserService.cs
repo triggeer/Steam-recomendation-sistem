@@ -324,8 +324,9 @@ namespace WebAppTest.Services
 					}
 				}
 			}
-
 			return vector;
+
+			
 		}
 	}
 }

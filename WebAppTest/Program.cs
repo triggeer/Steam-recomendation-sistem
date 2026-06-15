@@ -11,6 +11,7 @@ builder.Services.AddHttpClient<IImportService, ImportService>();
 builder.Services.AddHttpClient<IDataGainService, DataGainService>();
 builder.Services.AddHttpClient<ICreateService,  CreateService>();
 builder.Services.AddHttpClient<IUserService, UserService>();
+builder.Services.AddHttpClient<IRecommendationService, RecommendationService>();
 builder.Services.AddDbContext<AppDbContext>();
 
 var app = builder.Build();
