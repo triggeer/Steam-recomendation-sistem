@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using WebAppTest.Data;
 using WebAppTest.DTOs;
 using WebAppTest.Interfaces;
@@ -26,6 +27,19 @@ namespace WebAppTest.Services
 			_steamService = steamService;
 			_dataGainService = dataGainService;
 			_configuration = configuration;
+		}
+
+		public async Task<UserVectorResponse?> GetUserVector(string userId)
+		{
+			UserProfile? userProfile = await _context.UserProfiles.FirstOrDefaultAsync(v => v.Id == userId);
+			var vector = new UserVectorResponse
+			{
+				TagStrength = userProfile.TagStrength,
+				Length = userProfile.Length,
+				GameAmount = userProfile.GameAmount
+			};
+
+			return vector;
 		}
 
 		public async Task<List<OwnedGameDto>> GetUserGamesIdList(string userId)
@@ -243,26 +257,7 @@ namespace WebAppTest.Services
 			return tags;
 		}
 
-		public async Task<Dictionary<string, Dictionary<string, double>>> FormUserTagVector(string userId)
-		{   /*
-		 	 * U = {
-					RPG: 0.82,
-					OpenWorld: 0.65,
-					Fantasy: 0.54,
-					SoulsLike: 0.71,
-					StoryRich: 0.33,
-					PvP: 0.05
-				}
-		 	 */
-			var vector = new Dictionary<string, Dictionary<string, double>> { [userId] = [] };
-
-			var tags = await GetUserGameTags(userId);
-			foreach (var tag in tags)
-			{
-				vector[userId].Add(tag.Key, tag.Value["weight"]);
-			}
-			return vector; // гуд
-		}
+		
 
 		public async Task<Dictionary<string, Dictionary<string, double>>> FormGameTagVector(int gameId)
 		{
@@ -277,8 +272,8 @@ namespace WebAppTest.Services
 				}
 			 */
 			var vector = new Dictionary<string, Dictionary<string, double>>();
-			bool exist = await _dataGainService.CheckGameExistense(gameId);
-			if (!exist)
+			bool exists = await _dataGainService.CheckGameExistense(gameId);
+			if (!exists)
 			{
 				await _steamService.ImportGameAsync(gameId);	
 			}
@@ -290,9 +285,9 @@ namespace WebAppTest.Services
 		//							"123 (ds3)": {rpg:0.5, sols-like:0.7}
 		public async Task<Dictionary<string, Dictionary<string, double>>> GetGameTagsStrengh(int gameId)
 		{
-			bool exist = await _dataGainService.CheckGameExistense(gameId);
+			bool exists = await _dataGainService.CheckGameExistense(gameId);
 			
-			if (!exist)
+			if (!exists)
 			{
 				await _steamService.ImportGameAsync(gameId);
 			}
@@ -328,6 +323,65 @@ namespace WebAppTest.Services
 
 			
 		}
+
+		public async Task AddUserTagVector(string userId)
+		{/*
+		 	 * U = {
+					RPG: 0.82,
+					OpenWorld: 0.65,
+					Fantasy: 0.54,
+					SoulsLike: 0.71,
+					StoryRich: 0.33,
+					PvP: 0.05
+				}
+		 	 */
+			//var vector = new Dictionary<string, Dictionary<string, double>> { [userId] = [] };
+
+			var exist = await _dataGainService.ChekUserTagVectorExistense(userId);
+
+			if (exist)
+			{
+				return;
+			}
+
+			var tags = await GetUserGameTags(userId);
+			//foreach (var tag in tags)
+			//{
+			//	vector[userId].Add(tag.Key, tag.Value["weight"]);
+			//}
+
+			// {"rpg": 0.07, "shooter": 0.02}
+			Dictionary<string, double> userTags = new();
+
+			foreach (var tag in tags)
+			{
+				userTags.Add(tag.Key, tag.Value["weight"]);
+			}
+
+			double userLength =
+				Math.Sqrt(userTags.Values.Sum(v => v * v));
+
+
+			// полчуаем число игр через steam Api
+			var apiKey = _configuration.GetValue<string>("Steam:ApiKey");
+			string url = $"http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={apiKey}&steamid={userId}&format=json";
+
+
+			var steamRespone = await _httpClient.GetAsync(url);
+			steamRespone.EnsureSuccessStatusCode();
+			var steamJson = await steamRespone.Content.ReadAsStringAsync();
+			var data = JsonSerializer.Deserialize<
+			Dictionary<string, UserGamesResponse>
+			>(steamJson);
+
+			int gameAmount = data["response"].game_count;
+
+			var userProfile = new UserProfile(userId, userTags, userLength, gameAmount);
+
+			_context.UserProfiles.Add(userProfile);
+			await _context.SaveChangesAsync();
+		}
+
 	}
 }
 

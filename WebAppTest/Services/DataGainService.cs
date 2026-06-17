@@ -31,14 +31,12 @@ namespace WebAppTest.Services
 		{
 			bool exists = await _context.Games.AnyAsync(g => g.SteamAppId == appId);
 			return exists;	
-			//if (exists)
-			//{
-			//	return true;
-			//}
-			//else
-			//{
-			//	return false;
-			//}
+		}
+
+		public async Task<bool> ChekUserTagVectorExistense(string userId)
+		{
+			bool exists = await _context.UserProfiles.AnyAsync(u => u.Id == userId);
+			return exists;
 		}
 
 		public async Task<SpyGameDto> GetSpyData(int appId)

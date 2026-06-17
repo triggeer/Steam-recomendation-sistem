@@ -1,5 +1,7 @@
 ﻿using System.Numerics.Tensors;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using WebAppTest.DTOs;
 using WebAppTest.Interfaces;
 
 namespace WebAppTest.Services
@@ -8,61 +10,83 @@ namespace WebAppTest.Services
 	{
 		private readonly HttpClient _httpClient;
 		private readonly IUserService _userService;
-		private readonly ISteamService _steamService;
 		private readonly IDataGainService _dataGainService;
+		private readonly ICreateService _createService;
 		
 		public RecommendationService(
 		HttpClient httpClient,
 		IUserService userService,
-		ISteamService steamService,
-		IDataGainService dataGainService
+		IDataGainService dataGainService,
+		ICreateService createService
 		)
 		{
 			_httpClient = httpClient;
 			_userService = userService;
-			_steamService = steamService;
 			_dataGainService = dataGainService;
+			_createService = createService;
 		}
 
-		//public static float[] ReadArray(int elements, )
-
-		public async Task<float> CosSimilarity(
-		Dictionary<string, Dictionary<string, double>> userVector, 
-		string userId,
-		Dictionary<string, Dictionary<string, double>> gameVector,
-		int gameId)
+		public async Task<double> CosSimilarity(
+			Dictionary<string, double> userTags,
+			Dictionary<string, double> gameTags)
 		{
-			int userLengh = userVector[userId].Count;
-			int gameLengh = gameVector[gameId.ToString()].Count;
-			float[] floatUserVector = new float[userLengh];
-			float[] floatGameVector = new float[gameLengh];
-			
-			for (int i = 0; i < floatUserVector.Length; i++)
-			{
-				foreach (var tag in userVector[userId])
-				{
-					floatUserVector[i] = (float)tag.Value;
-					i++;
-				}
-			}
-
-			for (int i = 0; i < floatGameVector.Length; i++)
-			{
-				foreach (var tag in gameVector[gameId.ToString()])
-				{
-					floatGameVector[i] = (float)tag.Value;
-					i++;
-				}
-			}
+			double counter = 0;
 
 			//// userVector = {"123123 (bogdan)": {"rpg": 0.2, "govno": 0.7}}
-			ReadOnlySpan<float> user = floatUserVector;
-			ReadOnlySpan<float> game = floatGameVector;
-			// КОРОЧЕ ВСЁ ВЫШЕ НОРМ СЧИТАЕТ А ТУТА НАДО БУДЕТ СДЕЛАТЬ (ЩА БОБИК И ШЛЁПИК РАЗНЫХ ДЛИН, А НАДО ОДИНАКОВЫХ)
-			var result = TensorPrimitives.CosineSimilarity(user, game);
-			return result;
+			//// userTags = {"rpg": 0.2, "govno": 0.7}
+			//// gameTags = {"rpg": 0.3, "govno": 0.6}
+			foreach (var tag in gameTags)
+			{
+				if (userTags.TryGetValue(tag.Key, out double userWeight))
+				{
+					// считаем сколярное произведение - то на сколько сильно совпадают теги пользователя и игры
+					/* если 0.1 * 0.1 = 0.01
+					 * если 0.01 * 0.01 = 0.0001
+					 * по итогу будет типа 0.0357 если много совпадений
+					 * если ничё не совпадает будет 0.0043 */
+					counter += tag.Value * userWeight;
+				}
+			}
 
+			// ищем длины векторов 
+			/*
+			 * 0.10² = 0.0100
+				0.08² = 0.0064
+				0.12² = 0.0144
+				0.05² = 0.0025
+				0.02² = 0.0004
+				= 0.0337
+				√0.0337 = 0.1836
+			 */
+			double userNorm =
+				Math.Sqrt(userTags.Values.Sum(v => v * v));
+
+			double gameNorm =
+				Math.Sqrt(gameTags.Values.Sum(v => v * v));
+
+			if (userNorm == 0 || gameNorm == 0)
+				return 0;
+
+			// возвращаем Косинусное сходство векторов (0.3)
+			return counter / (userNorm * gameNorm);
 		}
 
+		//public async Task GetUserVector()
+
+		public async Task<UserVectorResponse> FormUserTagVector(string userId)
+		{
+			// проверяем, есть ли уже сформированный вектор
+			bool exists = await _dataGainService.ChekUserTagVectorExistense(userId);
+			
+			// если нет - добавляем
+			if (!exists)
+			{
+				await _userService.AddUserTagVector(userId);
+			}
+
+			// берем инфу из бд
+			var vector = await _userService.GetUserVector(userId);
+			return vector; // гуд
+		}
 	}
 }

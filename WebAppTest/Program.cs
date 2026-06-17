@@ -1,8 +1,25 @@
+using System.Data.Common;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using WebAppTest.Data;
 using WebAppTest.Interfaces;
 using WebAppTest.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//"ConnectionStrings": {
+//	"DBConnection": "Host=localhost; Port=5432; Database=test; Username=postgres; Password=123"
+//	}
+
+var connectionString = builder.Configuration.GetValue<string>("ConnectionStrings:DBConnection");
+
+var dataSourceBuilder =
+	new NpgsqlDataSourceBuilder(connectionString);
+
+dataSourceBuilder.EnableDynamicJson();
+
+var dataSource = dataSourceBuilder.Build();
+
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -12,8 +29,8 @@ builder.Services.AddHttpClient<IDataGainService, DataGainService>();
 builder.Services.AddHttpClient<ICreateService,  CreateService>();
 builder.Services.AddHttpClient<IUserService, UserService>();
 builder.Services.AddHttpClient<IRecommendationService, RecommendationService>();
-builder.Services.AddDbContext<AppDbContext>();
-
+//builder.Services.AddDbContext<AppDbContext>();
+builder.Services.AddDbContext<AppDbContext>(options =>	options.UseNpgsql(dataSource));
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -4,7 +4,7 @@ namespace WebAppTest.Interfaces
 {
 	public interface ICreateService
 	{
-		Task<Game> GameGreate(
+		Task<Game> GameCreate(
 		int appId,
 		string name, 
 		string detaildDescription, 
@@ -12,5 +12,6 @@ namespace WebAppTest.Interfaces
 		List<string> genres, 
 		Dictionary<string, int> tags);
 		Task AddGame(Game game);
+		
 	}
 }

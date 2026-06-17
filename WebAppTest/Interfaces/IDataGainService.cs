@@ -5,6 +5,7 @@ namespace WebAppTest.Interfaces
 	public interface IDataGainService
 	{
 		Task<bool> CheckGameExistense(int appId);
+		Task<bool> ChekUserTagVectorExistense(string userId);
 		Task<SpyGameDto> GetSpyData(int appId);
 		Task<int> GetInitPrice(int appId);
 		Task<Dictionary<string, int>> GetTags(int appId);

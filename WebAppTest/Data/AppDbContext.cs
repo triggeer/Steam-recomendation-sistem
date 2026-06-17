@@ -8,16 +8,20 @@ namespace WebAppTest.Data
 	{
 		protected readonly IConfiguration Configuration;
 
-		public AppDbContext(IConfiguration configuration)
-		{
-			Configuration = configuration;
-		}
+		//public AppDbContext(IConfiguration configuration)
+		//{
+		//	Configuration = configuration;
+		//}
 
-		protected override void OnConfiguring(DbContextOptionsBuilder options)
-		{
-			// connect to postgres with connection string from app settings
-			options.UseNpgsql(Configuration.GetConnectionString("DBConnection"));
-		}
+		public AppDbContext(DbContextOptions<AppDbContext> options)
+        : base(options)
+    {
+    }
+		//protected override void OnConfiguring(DbContextOptionsBuilder options)
+		//{
+		//	// connect to postgres with connection string from app settings
+		//	options.UseNpgsql(Configuration.GetConnectionString("DBConnection"));
+		//}
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
@@ -28,6 +32,8 @@ namespace WebAppTest.Data
 		// делаем названия в таблицах жанров и тегов уникальными
 			modelBuilder.Entity<Genre>().HasIndex(g => g.Name).IsUnique();
 			modelBuilder.Entity<Tag>().HasIndex(t => t.Name).IsUnique();
+			modelBuilder.Entity<UserProfile>().HasIndex(i => i.Id).IsUnique();
+			modelBuilder.Entity<UserProfile>().Property(t => t.TagStrength).HasColumnType("jsonb");
 
 			base.OnModelCreating(modelBuilder);
 		}
@@ -37,5 +43,6 @@ namespace WebAppTest.Data
 		public DbSet<GameTag> GameTags { get; set; }
 		public DbSet<Genre> Genres { get; set; }
 		public DbSet<GameGenre> GameGenres { get; set; }
+		public DbSet<UserProfile> UserProfiles { get; set; }
 	}
 }
