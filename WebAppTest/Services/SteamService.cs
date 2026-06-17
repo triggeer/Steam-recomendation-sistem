@@ -121,7 +121,7 @@ namespace WebAppTest.Services
 
 					var genres = await _dataGainService.GetGenres(appId);
 
-					var game = await _createService.GameGreate(
+					Game game = await _createService.GameCreate(
 					appId, steamDto.Name, steamDto.DetailedDescription,
 					initialPrice, genres, tags);
 
@@ -130,8 +130,6 @@ namespace WebAppTest.Services
 				else return;
 			}
 			else return;
-			
-
 		}
 
 		public async Task UpdateGame(int appId)
