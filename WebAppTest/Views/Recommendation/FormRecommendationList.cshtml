@@ -1,0 +1,15 @@
+﻿@using WebAppTest.DTOs
+@model List<RecommendationDto>;
+
+<h1>Список игр</h1>
+
+<ul>
+    <div>
+        @foreach (var game in Model)
+        {
+			<li>@game.GameName: @game.CosSimilarity</li>
+        }
+    </div>
+</ul>
+
+

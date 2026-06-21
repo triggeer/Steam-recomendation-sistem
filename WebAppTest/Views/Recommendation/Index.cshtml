@@ -28,3 +28,23 @@
     </button>
 
 </form>
+
+<h1>List</h1>
+<form asp-action="FormRecommendationList"
+      asp-controller="Recommendation"
+      method="get">
+
+    <label for="userID">userID</label>
+
+    <input type="text"
+            id="userID"
+            name="userID"
+            class="form-control" />
+
+    <br />
+
+    <button type="submit"
+            class="btn btn-primary">
+        Search
+    </button>
+</form>

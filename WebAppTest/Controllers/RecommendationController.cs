@@ -33,5 +33,12 @@ namespace WebAppTest.Controllers
 			double result = await _recommendationService.CosSimilarity(userTags, gameTags);
 			return View(result);
 		}
+
+		[HttpGet]
+		public async Task<IActionResult> FormRecommendationList(string userId)
+		{
+			var cosSimList = await _recommendationService.FormRecommendationListAsync(userId);
+			return View(cosSimList);
+		}
 	}
 }

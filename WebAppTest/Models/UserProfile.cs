@@ -18,5 +18,13 @@ namespace WebAppTest.Models
 			Length = length;
 			GameAmount = gameAmount;
 		}
+
+		public void Update(string id, Dictionary<string, double> tagStrength, double length, int gameAmount)
+		{
+			Id = id;
+			TagStrength = tagStrength;
+			Length = length;
+			GameAmount = gameAmount;
+		}
 	}
 }

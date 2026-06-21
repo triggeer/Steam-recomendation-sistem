@@ -119,5 +119,24 @@ namespace WebAppTest.Services
 
 			return steamDto;
 		}
+
+		public async Task<int> GetCurrentGameAmount(string userId)
+		{
+			var apiKey = _configuration.GetValue<string>("Steam:ApiKey");
+			string url = $"http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={apiKey}&steamid={userId}&format=json";
+
+
+			//var steamRespone = await _httpClient.GetAsync(url);
+			//steamRespone.EnsureSuccessStatusCode();
+			//var steamJson = await steamRespone.Content.ReadAsStringAsync();
+			//var data = JsonSerializer.Deserialize<
+			//Dictionary<string, UserGamesResponse>
+			//>(steamJson);
+
+			//int gameAmount = data["response"].game_count;
+			var data = await _httpClient.GetFromJsonAsync<Dictionary<string, UserGamesResponse>>(url);
+			int gameAmount = data["response"].game_count;
+			return gameAmount;
+		}
 	}
 }

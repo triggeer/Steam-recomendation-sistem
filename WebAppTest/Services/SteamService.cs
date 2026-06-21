@@ -5,6 +5,7 @@ using WebAppTest.Data;
 using WebAppTest.DTOs;
 using WebAppTest.Interfaces;
 using WebAppTest.Models;
+using WebAppTest.Services;
 using static System.Net.WebRequestMethods;
 
 namespace WebAppTest.Services
@@ -167,3 +168,26 @@ namespace WebAppTest.Services
 		}
 	}
 }
+
+//public async Task<Dictionary<string, double>> FormRecommendationListAsync(string userId)
+//{
+//	var list = new Dictionary<string, double>();
+//	var userVector = await FormUserTagVector(userId);
+//	Dictionary<string, double> userTags = userVector.TagStrength;
+//	/* получаем все id игр из БД
+//	 * для каждого id берем игру из БД
+//	 */
+//	var idList = await _context.Games.Select(g => g.SteamAppId).ToListAsync();
+//	foreach (var gameId in idList)
+//	{
+//		var game = await _context.Games.FirstOrDefaultAsync(g => g.SteamAppId == gameId);
+//		var gameVector = await _userService.GetGameTagsStrengh(gameId);
+//		Dictionary<string, double> gameTags = gameVector[gameId.ToString()];
+//		double result = await CosSimilarity(userTags, gameTags);
+//		list.Add(game.Name, result);
+//	}
+//	Dictionary<string, double> sortedDict = list
+//	.OrderByDescending(pair => pair.Value)
+//	.ToDictionary(pair => pair.Key, pair => pair.Value);
+//	return sortedDict;
+//}
