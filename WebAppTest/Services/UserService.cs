@@ -324,6 +324,37 @@ namespace WebAppTest.Services
 			
 		}
 
+
+		public async Task<UserProfile> CreateUserVector(string userId)
+		{
+			/*
+		 	 * U = {
+					RPG: 0.82,
+					OpenWorld: 0.65,
+					Fantasy: 0.54,
+					SoulsLike: 0.71,
+					StoryRich: 0.33,
+					PvP: 0.05
+				}
+		 	 */
+			var tags = await GetUserGameTags(userId);
+
+			Dictionary<string, double> userTags = new();
+
+			foreach (var tag in tags)
+			{
+				userTags.Add(tag.Key, tag.Value["weight"]);
+			}
+
+			double userLength =
+				Math.Sqrt(userTags.Values.Sum(v => v * v));
+
+			int gameAmount = await _dataGainService.GetCurrentGameAmount(userId);
+
+			var userProfile = new UserProfile(userId, userTags, userLength, gameAmount);
+			return userProfile;
+		}
+
 		public async Task AddUserTagVector(string userId)
 		{/*
 		 	 * U = {
@@ -335,51 +366,19 @@ namespace WebAppTest.Services
 					PvP: 0.05
 				}
 		 	 */
-			//var vector = new Dictionary<string, Dictionary<string, double>> { [userId] = [] };
-
-			var exist = await _dataGainService.ChekUserTagVectorExistense(userId);
-
-			if (exist)
-			{
-				return;
-			}
-
-			var tags = await GetUserGameTags(userId);
-			//foreach (var tag in tags)
-			//{
-			//	vector[userId].Add(tag.Key, tag.Value["weight"]);
-			//}
-
-			// {"rpg": 0.07, "shooter": 0.02}
-			Dictionary<string, double> userTags = new();
-
-			foreach (var tag in tags)
-			{
-				userTags.Add(tag.Key, tag.Value["weight"]);
-			}
-
-			double userLength =
-				Math.Sqrt(userTags.Values.Sum(v => v * v));
-
-
-			// полчуаем число игр через steam Api
-			var apiKey = _configuration.GetValue<string>("Steam:ApiKey");
-			string url = $"http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={apiKey}&steamid={userId}&format=json";
-
-
-			var steamRespone = await _httpClient.GetAsync(url);
-			steamRespone.EnsureSuccessStatusCode();
-			var steamJson = await steamRespone.Content.ReadAsStringAsync();
-			var data = JsonSerializer.Deserialize<
-			Dictionary<string, UserGamesResponse>
-			>(steamJson);
-
-			int gameAmount = data["response"].game_count;
-
-			var userProfile = new UserProfile(userId, userTags, userLength, gameAmount);
+			var userProfile = await CreateUserVector(userId);
 
 			_context.UserProfiles.Add(userProfile);
 			await _context.SaveChangesAsync();
+		}
+
+		public async Task UpdateUserVector(string userId)
+		{
+			UserProfile? oldVector = await _context.UserProfiles.FirstOrDefaultAsync(v => v.Id == userId);
+			var newVector = await CreateUserVector(userId);
+			oldVector.Update(userId, newVector.TagStrength, newVector.Length, newVector.GameAmount);
+			await _context.SaveChangesAsync();
+			return;
 		}
 
 	}
@@ -393,5 +392,4 @@ namespace WebAppTest.Services
  * "weight": 0.3,
  * "enterence": 5
  * }
- * 
  */

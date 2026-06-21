@@ -14,5 +14,6 @@ namespace WebAppTest.Interfaces
 		Task<double> CosSimilarity(
 			Dictionary<string, double> userTags,
 			Dictionary<string, double> gameTags);
+		Task<List<RecommendationDto>> FormRecommendationListAsync(string userId);
 	}
 }

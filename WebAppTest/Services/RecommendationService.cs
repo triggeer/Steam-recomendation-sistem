@@ -1,25 +1,30 @@
 ﻿using System.Numerics.Tensors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using WebAppTest.Data;
 using WebAppTest.DTOs;
 using WebAppTest.Interfaces;
+using WebAppTest.Models;
 
 namespace WebAppTest.Services
 {
 	public class RecommendationService : IRecommendationService
 	{
+		private readonly AppDbContext _context;
 		private readonly HttpClient _httpClient;
 		private readonly IUserService _userService;
 		private readonly IDataGainService _dataGainService;
 		private readonly ICreateService _createService;
 		
 		public RecommendationService(
+		AppDbContext context,
 		HttpClient httpClient,
 		IUserService userService,
 		IDataGainService dataGainService,
 		ICreateService createService
 		)
 		{
+			_context = context;
 			_httpClient = httpClient;
 			_userService = userService;
 			_dataGainService = dataGainService;
@@ -58,6 +63,7 @@ namespace WebAppTest.Services
 				= 0.0337
 				√0.0337 = 0.1836
 			 */
+
 			double userNorm =
 				Math.Sqrt(userTags.Values.Sum(v => v * v));
 
@@ -84,9 +90,59 @@ namespace WebAppTest.Services
 				await _userService.AddUserTagVector(userId);
 			}
 
+			int gameAmount = await _dataGainService.GetCurrentGameAmount(userId);
+
 			// берем инфу из бд
-			var vector = await _userService.GetUserVector(userId);
+			UserVectorResponse vector = await _userService.GetUserVector(userId);
+
+			//var vector = await _context.UserProfiles.FirstOrDefaultAsync(u => u.Id == userId);
+			if (vector.GameAmount != gameAmount)
+			{
+
+				await _userService.UpdateUserVector(userId);
+			}
+
+
 			return vector; // гуд
+		}
+
+		public async Task<List<RecommendationDto>> FormRecommendationListAsync(string userId)
+		{
+			var list = new List<RecommendationDto>();
+			var userVector = await FormUserTagVector(userId);
+			Dictionary<string, double> userTags = userVector.TagStrength;
+			/* получаем все id игр из БД
+			 * для каждого id берем игру из БД
+			 */
+
+			var games = await _context.Games.Select(g => new { g.SteamAppId, g.Name }).ToListAsync();
+
+			foreach (var game in games)
+			{
+				var gameVector = await _userService.GetGameTagsStrengh(game.SteamAppId);
+				Dictionary<string, double> gameTags = gameVector[game.SteamAppId.ToString()];
+				double result = await CosSimilarity(userTags, gameTags);
+				list.Add(new RecommendationDto
+				{
+					GameId = game.SteamAppId,
+					GameName = game.Name,
+					CosSimilarity = result
+				});
+			}
+			return list.OrderByDescending(r => r.CosSimilarity).ToList();
+			
+			//var idList = await _context.Games.Select(g => g.SteamAppId).ToListAsync();
+			//foreach (var gameId in idList)
+			//{
+			//	var gameVector = await _userService.GetGameTagsStrengh(gameId);
+			//	Dictionary<string, double> gameTags = gameVector[gameId.ToString()];
+			//	double result = await CosSimilarity(userTags, gameTags);
+			//	list.Add(gameId, result);
+			//}
+			//Dictionary<int, double> sortedDict = list
+			//.OrderByDescending(pair => pair.Value)
+			//.ToDictionary(pair => pair.Key, pair => pair.Value);
+			//return sortedDict;
 		}
 	}
 }

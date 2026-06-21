@@ -13,6 +13,7 @@ namespace WebAppTest.Interfaces
 		Task<Dictionary<string, Dictionary<string, double>>> FormGameTagVector(int gameId);
 		Task<Dictionary<string, Dictionary<string, double>>> GetGameTagsStrengh(int gameId);
 		Task AddUserTagVector(string userId);
+		Task UpdateUserVector(string userIdq);
 
 
 	}
