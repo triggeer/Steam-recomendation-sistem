@@ -1,26 +1,43 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using WebAppTest.Data;
+using WebAppTest.DTOs;
+using WebAppTest.Forms;
 using WebAppTest.Interfaces;
 using WebAppTest.Services;
+
 
 namespace WebAppTest.Controllers
 {
 	public class RecommendationController : Controller
 	{
+		private readonly AppDbContext _context;
 		private readonly IUserService _userService;
 		private readonly IRecommendationService _recommendationService;
 
 		public RecommendationController(
+		AppDbContext context,
 		IUserService userService,
 		IRecommendationService recommendationService)
 		{
+			_context = context;
 			_userService = userService;
 			_recommendationService = recommendationService;
 		}
 
 
-		public IActionResult Index()
+		public async Task<IActionResult> Index()
 		{
-			return View();
+			// 1. Создаем пустой объект модели
+			var model = new Form1();
+
+			// 2. Заполняем список тегов напрямую из базы
+			var tags = await _context.Tags.ToListAsync();
+			model.TagFromDb = new SelectList(tags, "Id", "Name");
+
+			// 3. Передаем заполненную модель в View
+			return View(model);
 		}
 
 		[HttpGet]
@@ -39,6 +56,14 @@ namespace WebAppTest.Controllers
 		{
 			var cosSimList = await _recommendationService.FormRecommendationListAsync(userId);
 			return View(cosSimList);
+		}
+
+		[HttpGet]
+		public async Task<IActionResult> FormRecomendationsOnTag(string userId, int tagID)
+		{
+			//var tagFromDb = await _context.Tags.FirstOrDefaultAsync(t => t.Id == tagID);
+			List<RecommendationDto> list = await _recommendationService.FormRecomendationsOnTagAsync(userId, tagID);
+			return View(list);
 		}
 	}
 }

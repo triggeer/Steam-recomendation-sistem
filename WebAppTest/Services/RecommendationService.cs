@@ -115,21 +115,46 @@ namespace WebAppTest.Services
 			 * для каждого id берем игру из БД
 			 */
 
-			var games = await _context.Games.Select(g => new { g.SteamAppId, g.Name }).ToListAsync();
+			var userGames = await _userService.GetUserGamesIdList(userId);
+			var userIds = userGames.Select(x => x.AppId).ToList();
 
+			var games = await _context.Games.Select(
+				g => new 
+				{ 
+					g.SteamAppId, 
+					g.Name, 
+					g.GameTags
+				}).ToListAsync();
+			
 			foreach (var game in games)
 			{
-				var gameVector = await _userService.GetGameTagsStrengh(game.SteamAppId);
-				Dictionary<string, double> gameTags = gameVector[game.SteamAppId.ToString()];
-				double result = await CosSimilarity(userTags, gameTags);
-				list.Add(new RecommendationDto
+				if (!userIds.Contains(game.SteamAppId))
 				{
-					GameId = game.SteamAppId,
-					GameName = game.Name,
-					CosSimilarity = result
-				});
+					var gameVector = await _userService.GetGameTagsStrengh(game.SteamAppId);
+					Dictionary<string, double> gameTags = gameVector[game.SteamAppId.ToString()];
+					double result = await CosSimilarity(userTags, gameTags);
+					
+					var tags = new List<TagFromDb>();
+					foreach (var tag in game.GameTags)
+					{
+						var newTag = new TagFromDb { Id = tag.TagId, Name = tag.Tag.Name};
+						tags.Add(newTag);
+					}
+					if (result != 0)
+					{
+						list.Add(new RecommendationDto
+						{
+							GameId = game.SteamAppId,
+							GameName = game.Name,
+							CosSimilarity = result,
+							GameTags = tags
+						});
+					}
+					
+				}
 			}
 			return list.OrderByDescending(r => r.CosSimilarity).ToList();
+			// +- 4 секунды для существующих векторов
 			
 			//var idList = await _context.Games.Select(g => g.SteamAppId).ToListAsync();
 			//foreach (var gameId in idList)
@@ -143,6 +168,21 @@ namespace WebAppTest.Services
 			//.OrderByDescending(pair => pair.Value)
 			//.ToDictionary(pair => pair.Key, pair => pair.Value);
 			//return sortedDict;
+		}
+
+		public async Task<List<RecommendationDto>> FormRecomendationsOnTagAsync(string userId, int tagId)
+		{
+			var list = new List<RecommendationDto>();
+			var recomendations = await FormRecommendationListAsync(userId);
+			foreach (var game in recomendations)
+			{
+				if (game.GameTags.Any(x => x.Id == tagId))
+				{
+					list.Add(game);
+				}
+			}
+
+			return list;
 		}
 	}
 }
