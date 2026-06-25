@@ -1,4 +1,7 @@
-﻿<h1>Реки</h1>
+﻿@using WebAppTest.Forms;
+@model Form1
+
+<h1>Реки</h1>
 
 <form asp-action="FormRecomendations"
       asp-controller="Recommendation"
@@ -41,6 +44,37 @@
             name="userID"
             class="form-control" />
 
+    <br />
+
+    <button type="submit"
+            class="btn btn-primary">
+        Search
+    </button>
+</form>
+
+<h1>По тегу</h1>
+<form asp-action="FormRecomendationsOnTag"
+      asp-controller="Recommendation"
+      method="get">
+
+    <label for="userID">userID</label>
+
+    <input type="text"
+           id="userID"
+           name="userID"
+           class="form-control" />
+
+    <br />
+
+    <label for="tagId">Тег</label>
+
+    <select id="tagId" name="tagId" class="form-control"
+            asp-for="SelectedTagId"
+            asp-items="Model.TagFromDb">
+            <option value="">выбирай тег</option>
+    </select>
+
+    <span asp-validation-for="SelectedTagId" class="text-danger"></span>
     <br />
 
     <button type="submit"

@@ -175,31 +175,38 @@ namespace WebAppTest.Services
 		public async Task<Dictionary<string, Dictionary<string, double>>> GetUserGameTags(string userId)
 		{               // RPG: {weight: 100, enterence: 3}
 			int counter = 0;
-			List <UserGameDto> games = await GetUserGames(userId);
+			List<UserGameDto> games = await GetUserGames(userId);
 			var tags = new Dictionary<string, Dictionary<string, double>>();
 			foreach (UserGameDto game in games)
 			{
+				SpyTagDto nonGames = new SpyTagDto { Name = "Utilities" };
+				if (game.Tags.Any(t => t.Name == "Utilities" || t.Name == "Software"))
+				{
+					continue;
+				}
 				counter++;
 				int weightConunt = 0;
 				foreach (SpyTagDto tag in game.Tags)
 				{
 					weightConunt += tag.Weight;
 				}
+				double playtime = (double)game.PlayTime / 60;
 
 				foreach (SpyTagDto tag in game.Tags)
 				{
 					if (game.Tags != null)
 					{
-						double tStrengh = (double)tag.Weight / weightConunt;
+						double tStrengh = ((double)tag.Weight / weightConunt) * Math.Log(1 + playtime);
 						// вводим счетчик вхождений для каждого тега
 						//int count = 0;
 						// если тег уже есть
-						if (tags.TryGetValue(tag.Name, out Dictionary<string, double > currentInnerDict))
+						if (tags.TryGetValue(tag.Name, out Dictionary<string, double> currentInnerDict))
 						{   //	RPG:	  {weight: 100, ent: 4}
-							// НАДО НОРМАЛЬНО ВЕСА СДЕЛАТЬ!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-							/*
-							 * всего 20 тегов
-							 * "tags": {
+							/*11446
+							 * mk x = 0,7172449274855845
+							 * jojo = 0,4655811906556142
+								* всего 20 тегов
+								* "tags": {
 									"Souls-like": 9604, 0.11
 									"Dark Fantasy": 7905, 0.09
 									"Difficult": 6967, 0.08
@@ -220,17 +227,17 @@ namespace WebAppTest.Services
 									"Singleplayer": 2427, 0.025
 									"Character Customization": 1936, 0.02 
 									"Replay Value": 1926 0.02
-								  }
-								  86000
-								  для каждого тега вес / сумму всесов = релевантность (сила) тега
-								  если сила тега = +-0.1 - тег очень релевантный
-								  если ~ (0.4, 0.7) норм 
-								  если < 0.03 не очень релевантный 
-								  =>>>>> вычисляем силу тега и записываем её вместо всеа
-							 */
+									}
+									86000
+									для каждого тега вес / сумму всесов = релевантность (сила) тега
+									если сила тега = +-0.1 - тег очень релевантный
+									если ~ (0.4, 0.7) норм 
+									если < 0.03 не очень релевантный 
+									=>>>>> вычисляем силу тега и записываем её вместо всеа
+								*/
 							tags[tag.Name]["weight"] = currentInnerDict["weight"] + tStrengh;
 
-							tags[tag.Name]["enterence"] = currentInnerDict["enterence"]+1;
+							tags[tag.Name]["enterence"] = currentInnerDict["enterence"] + 1;
 						}
 						else
 						{
@@ -251,7 +258,8 @@ namespace WebAppTest.Services
 				//Dictionary<string, Dictionary<string, double>>
 				//string, Dictionary<string, double>
 				var currentWeight = tag.Value["weight"];
-				tag.Value["weight"] = currentWeight / tag.Value["enterence"];
+				tag.Value["weight"] = currentWeight / (Math.Log(tag.Value["enterence"]) + 1);
+
 			}
 
 			return tags;
