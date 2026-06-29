@@ -91,12 +91,12 @@ namespace WebAppTest.Services
 			}
 
 			int gameAmount = await _dataGainService.GetCurrentGameAmount(userId);
-
+			DateTime currentDate = DateTime.Now;
 			// берем инфу из бд
 			UserVectorResponse vector = await _userService.GetUserVector(userId);
 
 			//var vector = await _context.UserProfiles.FirstOrDefaultAsync(u => u.Id == userId);
-			if (vector.GameAmount != gameAmount)
+			if (vector.GameAmount != gameAmount || (currentDate - vector.UpdatedAt) > TimeSpan.FromDays(7))
 			{
 
 				await _userService.UpdateUserVector(userId);
@@ -153,7 +153,10 @@ namespace WebAppTest.Services
 					
 				}
 			}
-			return list.OrderByDescending(r => r.CosSimilarity).ToList();
+			var sortedList = list.OrderByDescending(r => r.CosSimilarity).ToList();
+			
+
+			return sortedList;
 			// +- 4 секунды для существующих векторов
 			
 			//var idList = await _context.Games.Select(g => g.SteamAppId).ToListAsync();
@@ -170,7 +173,22 @@ namespace WebAppTest.Services
 			//return sortedDict;
 		}
 
-		public async Task<List<RecommendationDto>> FormRecomendationsOnTagAsync(string userId, int tagId)
+		//public async Task<List<RecommendationDto>> FormRecomendationsOnTagAsync(string userId, int tagId)
+		//{
+		//	var list = new List<RecommendationDto>();
+		//	var recomendations = await FormRecommendationListAsync(userId);
+		//	foreach (var game in recomendations)
+		//	{
+		//		if (game.GameTags.Any(x => x.Id == tagId))
+		//		{
+		//			list.Add(game);
+		//		}
+		//	}
+
+		//	return list;
+		//}
+
+		public async Task<RecommendationsOnTeg> FormRecomendationsOnTagAsync(string userId, int tagId)
 		{
 			var list = new List<RecommendationDto>();
 			var recomendations = await FormRecommendationListAsync(userId);
@@ -181,8 +199,11 @@ namespace WebAppTest.Services
 					list.Add(game);
 				}
 			}
+			var tag = await _context.Tags.FirstOrDefaultAsync(x => x.Id == tagId);
 
-			return list;
+			var result = new RecommendationsOnTeg{ RecList = list, tag = tag.Name};
+
+			return result;
 		}
 	}
 }

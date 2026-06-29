@@ -15,6 +15,6 @@ namespace WebAppTest.Interfaces
 			Dictionary<string, double> userTags,
 			Dictionary<string, double> gameTags);
 		Task<List<RecommendationDto>> FormRecommendationListAsync(string userId);
-		Task<List<RecommendationDto>> FormRecomendationsOnTagAsync(string userId, int tagId);
+		Task<RecommendationsOnTeg> FormRecomendationsOnTagAsync(string userId, int tagId);
 	}
 }
