@@ -6,12 +6,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using WebAppTest.Data;
 
-namespace WebAppTest.Forms
+namespace WebAppTest.DTOs
 {
-	public class Form1 
+	public class TagCheckBox 
 	{
 		public SelectList TagFromDb {  get; set; }
-
 		public int SelectedTagId { get; set; }
 	}
 }

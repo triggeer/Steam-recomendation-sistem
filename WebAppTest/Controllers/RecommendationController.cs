@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WebAppTest.Data;
 using WebAppTest.DTOs;
-using WebAppTest.Forms;
 using WebAppTest.Interfaces;
 using WebAppTest.Services;
 
@@ -30,7 +29,7 @@ namespace WebAppTest.Controllers
 		public async Task<IActionResult> Index()
 		{
 			// 1. Создаем пустой объект модели
-			var model = new Form1();
+			var model = new TagCheckBox();
 
 			// 2. Заполняем список тегов напрямую из базы
 			var tags = await _context.Tags.ToListAsync();
@@ -59,10 +58,9 @@ namespace WebAppTest.Controllers
 		}
 
 		[HttpGet]
-		public async Task<IActionResult> FormRecomendationsOnTag(string userId, int tagID)
+		public async Task<IActionResult> FormRecomendationsOnTag(string userId, int tagId)
 		{
-			//var tagFromDb = await _context.Tags.FirstOrDefaultAsync(t => t.Id == tagID);
-			List<RecommendationDto> list = await _recommendationService.FormRecomendationsOnTagAsync(userId, tagID);
+			RecommendationsOnTeg list = await _recommendationService.FormRecomendationsOnTagAsync(userId, tagId);	
 			return View(list);
 		}
 	}

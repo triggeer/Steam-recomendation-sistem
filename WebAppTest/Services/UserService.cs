@@ -36,7 +36,8 @@ namespace WebAppTest.Services
 			{
 				TagStrength = userProfile.TagStrength,
 				Length = userProfile.Length,
-				GameAmount = userProfile.GameAmount
+				GameAmount = userProfile.GameAmount,
+				UpdatedAt = userProfile.UpdatedAt
 			};
 
 			return vector;
@@ -191,6 +192,8 @@ namespace WebAppTest.Services
 					weightConunt += tag.Weight;
 				}
 				double playtime = (double)game.PlayTime / 60;
+				playtime = double.Min(playtime, 100);
+				playtime = (playtime / 20);
 
 				foreach (SpyTagDto tag in game.Tags)
 				{
@@ -259,7 +262,6 @@ namespace WebAppTest.Services
 				//string, Dictionary<string, double>
 				var currentWeight = tag.Value["weight"];
 				tag.Value["weight"] = currentWeight / (Math.Log(tag.Value["enterence"]) + 1);
-
 			}
 
 			return tags;
@@ -359,7 +361,9 @@ namespace WebAppTest.Services
 
 			int gameAmount = await _dataGainService.GetCurrentGameAmount(userId);
 
-			var userProfile = new UserProfile(userId, userTags, userLength, gameAmount);
+			DateTime updatedAt = DateTime.Now;
+
+			var userProfile = new UserProfile(userId, userTags, userLength, gameAmount, updatedAt);
 			return userProfile;
 		}
 
@@ -384,11 +388,11 @@ namespace WebAppTest.Services
 		{
 			UserProfile? oldVector = await _context.UserProfiles.FirstOrDefaultAsync(v => v.Id == userId);
 			var newVector = await CreateUserVector(userId);
-			oldVector.Update(userId, newVector.TagStrength, newVector.Length, newVector.GameAmount);
+			DateTime updatedAt = DateTime.Now;
+			oldVector.Update(userId, newVector.TagStrength, newVector.Length, newVector.GameAmount, newVector.UpdatedAt);
 			await _context.SaveChangesAsync();
 			return;
 		}
-
 	}
 }
 

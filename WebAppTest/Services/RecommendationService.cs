@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using WebAppTest.Data;
 using WebAppTest.DTOs;
 using WebAppTest.Interfaces;
+using WebAppTest.Migrations;
 using WebAppTest.Models;
 
 namespace WebAppTest.Services
@@ -91,12 +92,12 @@ namespace WebAppTest.Services
 			}
 
 			int gameAmount = await _dataGainService.GetCurrentGameAmount(userId);
-
+			DateTime currentDate = DateTime.Now;
 			// берем инфу из бд
 			UserVectorResponse vector = await _userService.GetUserVector(userId);
 
 			//var vector = await _context.UserProfiles.FirstOrDefaultAsync(u => u.Id == userId);
-			if (vector.GameAmount != gameAmount)
+			if (vector.GameAmount != gameAmount || (currentDate - vector.UpdatedAt) > TimeSpan.FromDays(7))
 			{
 
 				await _userService.UpdateUserVector(userId);
@@ -110,6 +111,21 @@ namespace WebAppTest.Services
 		{
 			var list = new List<RecommendationDto>();
 			var userVector = await FormUserTagVector(userId);
+			/*
+			 * {
+				  "2D": 0.31809245060735336,
+				  "3D": 0.09755129007135584,
+				  "4X": 0.007433650640747398,
+				  "VR": 0.062164114246365025,
+				  "Elf": 0.010591989430834014,
+				  "FMV": 0.013916809731422241,
+				  "FPS": 0.21931425216181996,
+				  "PvE": 0.08735315933855649,
+				  "PvP": 0.1670017616192241,
+				  "RPG": 0.3379300102282034,
+				  ...
+				}
+			 */
 			Dictionary<string, double> userTags = userVector.TagStrength;
 			/* получаем все id игр из БД
 			 * для каждого id берем игру из БД
@@ -123,6 +139,9 @@ namespace WebAppTest.Services
 				{ 
 					g.SteamAppId, 
 					g.Name, 
+					g.Owners,
+					g.UserScore,
+					g.ReviewAmount,
 					g.GameTags
 				}).ToListAsync();
 			
@@ -133,13 +152,30 @@ namespace WebAppTest.Services
 					var gameVector = await _userService.GetGameTagsStrengh(game.SteamAppId);
 					Dictionary<string, double> gameTags = gameVector[game.SteamAppId.ToString()];
 					double result = await CosSimilarity(userTags, gameTags);
+					/*
+						Monster Hunter: World: --> 0,5835905493661762 <---
+						ELDEN RING NIGHTREIGN: --> 0,5826818525389187 <--- 
+						Valheim: --> 0,5805596998270341 <---
+				 */
+					int reviewAmount = game.ReviewAmount;
+					double score = game.UserScore;
+					// минимальное количество голосов, необходимое для того, чтобы рейтинг стал значимым
+					int min = 50000;
+					// средний рейтинг среди всех объектов в базе
+					double avgScore = 0.5;
 					
+					double rating = ((reviewAmount * score) + (min * avgScore)) / (reviewAmount + min);
+					
+					result *= rating;
+
 					var tags = new List<TagFromDb>();
+
 					foreach (var tag in game.GameTags)
 					{
 						var newTag = new TagFromDb { Id = tag.TagId, Name = tag.Tag.Name};
 						tags.Add(newTag);
 					}
+
 					if (result != 0)
 					{
 						list.Add(new RecommendationDto
@@ -153,7 +189,10 @@ namespace WebAppTest.Services
 					
 				}
 			}
-			return list.OrderByDescending(r => r.CosSimilarity).ToList();
+			var sortedList = list.OrderByDescending(r => r.CosSimilarity).ToList();
+			
+
+			return sortedList;
 			// +- 4 секунды для существующих векторов
 			
 			//var idList = await _context.Games.Select(g => g.SteamAppId).ToListAsync();
@@ -170,7 +209,22 @@ namespace WebAppTest.Services
 			//return sortedDict;
 		}
 
-		public async Task<List<RecommendationDto>> FormRecomendationsOnTagAsync(string userId, int tagId)
+		//public async Task<List<RecommendationDto>> FormRecomendationsOnTagAsync(string userId, int tagId)
+		//{
+		//	var list = new List<RecommendationDto>();
+		//	var recomendations = await FormRecommendationListAsync(userId);
+		//	foreach (var game in recomendations)
+		//	{
+		//		if (game.GameTags.Any(x => x.Id == tagId))
+		//		{
+		//			list.Add(game);
+		//		}
+		//	}
+
+		//	return list;
+		//}
+
+		public async Task<RecommendationsOnTeg> FormRecomendationsOnTagAsync(string userId, int tagId)
 		{
 			var list = new List<RecommendationDto>();
 			var recomendations = await FormRecommendationListAsync(userId);
@@ -181,8 +235,11 @@ namespace WebAppTest.Services
 					list.Add(game);
 				}
 			}
+			var tag = await _context.Tags.FirstOrDefaultAsync(x => x.Id == tagId);
 
-			return list;
+			var result = new RecommendationsOnTeg{ RecList = list, tag = tag.Name};
+
+			return result;
 		}
 	}
 }

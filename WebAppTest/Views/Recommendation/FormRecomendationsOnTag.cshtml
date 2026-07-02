@@ -1,19 +1,15 @@
 ﻿@using WebAppTest.DTOs
-@model List<RecommendationDto>;
+@model RecommendationsOnTeg;
 
-<h1>Список игр</h1>
+<h1>Список игр с тегом @Model.tag</h1>
 
 
 <ul>
-    <div>
-        <ol>
-            @foreach (var game in Model)
+	<div>
+		<ol>
+            @foreach (var game in Model.RecList)
             {
-                <li>@game.GameName: @game.CosSimilarity</li>
-                @* foreach (var tag in game.GameTags)
-                {
-                    @tag.Name
-                } *@
+		        <li>@game.GameName: @game.CosSimilarity</li>
             }
         </ol>
     </div>
