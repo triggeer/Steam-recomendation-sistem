@@ -7,6 +7,8 @@ namespace WebAppTest.Interfaces
 		Task<bool> CheckGameExistense(int appId);
 		Task<bool> ChekUserTagVectorExistense(string userId);
 		Task<SpyGameDto> GetSpyData(int appId);
+		Task<(double, int)> GetUserScore(int appId);
+		Task<long> GetOwners(int appId);
 		Task<int> GetInitPrice(int appId);
 		Task<Dictionary<string, int>> GetTags(int appId);
 		Task<List<string>> GetGenres(int appId);

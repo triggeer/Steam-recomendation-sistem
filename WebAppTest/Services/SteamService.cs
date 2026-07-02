@@ -86,6 +86,8 @@ namespace WebAppTest.Services
 				})
 				.ToList(),
 				DetailedDescription = game.DetailedDescription,
+				UserScore = game.UserScore,
+				Owners = game.Owners,
 				InitialPrice = game.InitialPrice
 			};
 			return details;
@@ -107,23 +109,27 @@ namespace WebAppTest.Services
 		*/
 		public async Task ImportGameAsync(int appId)
 		{
-			var exitsts = await _dataGainService.CheckGameExistense(appId);
+			bool exitsts = await _dataGainService.CheckGameExistense(appId);
 			if (!exitsts)
 			{
-				var steamDto = await _dataGainService.GetSteamData(appId);
+				SteamGameDto steamDto = await _dataGainService.GetSteamData(appId);
 				if (steamDto != null)
 				{
-					var spyDto = await _dataGainService.GetSpyData(appId);
+					SpyGameDto spyDto = await _dataGainService.GetSpyData(appId);
 
-					var tags = await _dataGainService.GetTags(appId);
+					Dictionary<string, int> tags = await _dataGainService.GetTags(appId);
 
-					var initialPrice = await _dataGainService.GetInitPrice(appId);
+					(double userScore, int reviewAmount) = await _dataGainService.GetUserScore(appId);
 
+					long owners = await _dataGainService.GetOwners(appId);
 
-					var genres = await _dataGainService.GetGenres(appId);
+					int initialPrice = await _dataGainService.GetInitPrice(appId);
+
+					List<string> genres = await _dataGainService.GetGenres(appId);
 
 					Game game = await _createService.GameCreate(
 					appId, steamDto.Name, steamDto.DetailedDescription,
+					userScore, reviewAmount, owners,
 					initialPrice, genres, tags);
 
 					await _createService.AddGame(game);

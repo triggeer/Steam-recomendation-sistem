@@ -192,6 +192,8 @@ namespace WebAppTest.Services
 					weightConunt += tag.Weight;
 				}
 				double playtime = (double)game.PlayTime / 60;
+				playtime = double.Min(playtime, 100);
+				playtime = (playtime / 20);
 
 				foreach (SpyTagDto tag in game.Tags)
 				{
@@ -260,7 +262,6 @@ namespace WebAppTest.Services
 				//string, Dictionary<string, double>
 				var currentWeight = tag.Value["weight"];
 				tag.Value["weight"] = currentWeight / (Math.Log(tag.Value["enterence"]) + 1);
-
 			}
 
 			return tags;

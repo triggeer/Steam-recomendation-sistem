@@ -1,6 +1,10 @@
-﻿using System.Text.Json;
+﻿using System;
+using System.Globalization;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Npgsql.PostgresTypes;
 using WebAppTest.Data;
 using WebAppTest.DTOs;
@@ -67,9 +71,9 @@ namespace WebAppTest.Services
 			var spyDto = await GetSpyData(appId);
 			if (spyDto.InitialPrice == null)
 			{
-				spyDto.InitialPrice = "0";
+				spyDto.InitialPrice = 0;
 			}
-			int initialPrice = int.Parse(spyDto.InitialPrice);
+			int initialPrice = spyDto.InitialPrice;
 			return initialPrice;
 		}
 
@@ -89,16 +93,33 @@ namespace WebAppTest.Services
 			return tags;
 		}
 
-		public async Task<List<string>> GetGenres(int appId)
+		public async Task<(double, int)> GetUserScore(int appId)
 		{
-			var genres = new List<string>();
-			var steamDto = await GetSteamData(appId);
-			if (steamDto.Genres != null)
-			{
-				genres = steamDto.Genres.Select(g => g.Description).ToList(); //////////////////
-				return genres;
-			}
-			else return genres = [];
+			string url = $"https://store.steampowered.com/appreviews/{appId}?json=1&language=all";
+			
+			HttpResponseMessage response = await _httpClient.GetAsync(url);
+
+			response.EnsureSuccessStatusCode();
+
+			string spyJsonString = await response.Content.ReadAsStringAsync();
+
+			var responseData = JsonSerializer.Deserialize<SteamReviewResponse>(spyJsonString)
+			?? throw new Exception("SteamSpy DTO is null");
+
+			int total = responseData.data.Total;
+			int positive = responseData.data.Positive;
+			double score = (double)positive / total;
+			double result = Math.Round(score, 2);
+			return (result, total);
+		}
+
+		public async Task<long> GetOwners(int  appId)
+		{
+			var spyDto = await GetSpyData(appId);
+			string ownersString = spyDto.Owners;
+			string firstPart = ownersString.Split("..")[0].Trim();
+			long owners = long.Parse(firstPart, NumberStyles.AllowThousands, CultureInfo.InvariantCulture);
+			return owners;
 		}
 
 		public async Task<SteamGameDto> GetSteamData(int appId)
@@ -120,20 +141,22 @@ namespace WebAppTest.Services
 			return steamDto;
 		}
 
+		public async Task<List<string>> GetGenres(int appId)
+		{
+			var genres = new List<string>();
+			var steamDto = await GetSteamData(appId);
+			if (steamDto.Genres != null)
+			{
+				genres = steamDto.Genres.Select(g => g.Description).ToList(); //////////////////
+				return genres;
+			}
+			else return genres = [];
+		}
+
 		public async Task<int> GetCurrentGameAmount(string userId)
 		{
 			var apiKey = _configuration.GetValue<string>("Steam:ApiKey");
 			string url = $"http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={apiKey}&steamid={userId}&format=json";
-
-
-			//var steamRespone = await _httpClient.GetAsync(url);
-			//steamRespone.EnsureSuccessStatusCode();
-			//var steamJson = await steamRespone.Content.ReadAsStringAsync();
-			//var data = JsonSerializer.Deserialize<
-			//Dictionary<string, UserGamesResponse>
-			//>(steamJson);
-
-			//int gameAmount = data["response"].game_count;
 			var data = await _httpClient.GetFromJsonAsync<Dictionary<string, UserGamesResponse>>(url);
 			int gameAmount = data["response"].game_count;
 			return gameAmount;
