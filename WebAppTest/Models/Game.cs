@@ -16,9 +16,9 @@ namespace WebAppTest.Models
 		public double UserScore { get; private set; }
 		public int ReviewAmount { get; private set; }
 		public long Owners {  get; private set; }
-		public int InitialPrice { get; private set; }
+		public int? InitialPrice { get; private set; } = 0;
 		private Game(){ }
-		public Game(int steamAppId, string name, string detailed_description, double userScore, int reviewAmount, long owners, int initPrice)
+		public Game(int steamAppId, string name, string detailed_description, double userScore, int reviewAmount, long owners, int? initPrice)
 		{
 			SteamAppId = steamAppId;
 			Name = name;
@@ -28,9 +28,13 @@ namespace WebAppTest.Models
 			UserScore = userScore;
 			ReviewAmount = reviewAmount;
 			Owners = owners;
-			InitialPrice = initPrice;
+			if (initPrice == null)
+			{
+				InitialPrice = 0;
+			}
+				
 		}
-		public void UpdateInitialPrice(int newInitPrice)
+		public void UpdateInitialPrice(int? newInitPrice)
 		{
 			InitialPrice = newInitPrice;
 		}

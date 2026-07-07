@@ -88,7 +88,7 @@ namespace WebAppTest.Services
 				DetailedDescription = game.DetailedDescription,
 				UserScore = game.UserScore,
 				Owners = game.Owners,
-				InitialPrice = game.InitialPrice
+				InitialPrice = game.InitialPrice ?? 0
 			};
 			return details;
 		}
@@ -123,7 +123,7 @@ namespace WebAppTest.Services
 
 					long owners = await _dataGainService.GetOwners(appId);
 
-					int initialPrice = await _dataGainService.GetInitPrice(appId);
+					int? initialPrice = await _dataGainService.GetInitPrice(appId);
 
 					List<string> genres = await _dataGainService.GetGenres(appId);
 
@@ -161,15 +161,17 @@ namespace WebAppTest.Services
 									.FirstOrDefaultAsync(g => g.SteamAppId == appId);
 
 
-				var newInitialPrice = await _dataGainService.GetInitPrice(appId);
+				int? newInitialPrice = await _dataGainService.GetInitPrice(appId);
 
 
-				if (oldGame.InitialPrice != newInitialPrice)
+				if (oldGame.InitialPrice == newInitialPrice)
+					return;
+				else
 				{
 					oldGame.UpdateInitialPrice(newInitialPrice);
 					await _context.SaveChangesAsync();
+					return;
 				}
-				else return;
 			}
 		}
 	}

@@ -66,14 +66,14 @@ namespace WebAppTest.Services
 			return spyDto;
 		}
 
-		public async Task<int> GetInitPrice(int appId)
+		public async Task<int?> GetInitPrice(int appId)
 		{
 			var spyDto = await GetSpyData(appId);
 			if (spyDto.InitialPrice == null)
 			{
 				spyDto.InitialPrice = 0;
 			}
-			int initialPrice = spyDto.InitialPrice;
+			int? initialPrice = spyDto.InitialPrice;
 			return initialPrice;
 		}
 
@@ -108,7 +108,11 @@ namespace WebAppTest.Services
 
 			int total = responseData.data.Total;
 			int positive = responseData.data.Positive;
-			double score = (double)positive / total;
+			double score = 0;
+			if (total != 0)
+			{
+				score = (double)positive / total;
+			}
 			double result = Math.Round(score, 2);
 			return (result, total);
 		}
