@@ -9,7 +9,7 @@ namespace WebAppTest.Interfaces
 		Task<SpyGameDto> GetSpyData(int appId);
 		Task<(double, int)> GetUserScore(int appId);
 		Task<long> GetOwners(int appId);
-		Task<int> GetInitPrice(int appId);
+		Task<int?> GetInitPrice(int appId);
 		Task<Dictionary<string, int>> GetTags(int appId);
 		Task<List<string>> GetGenres(int appId);
 		Task<SteamGameDto> GetSteamData(int appId);

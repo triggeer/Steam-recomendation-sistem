@@ -27,7 +27,7 @@ namespace WebAppTest.Services
 			_dataGainService = dataGainService;
 		}
 
-		public async Task<Game> GameCreate(int appId, string name, string detaildDescription, double userScore, int reviewAmount, long owners, int initialPrice, List<string> genres, Dictionary<string, int> tags)
+		public async Task<Game> GameCreate(int appId, string name, string detaildDescription, double userScore, int reviewAmount, long owners, int? initialPrice, List<string> genres, Dictionary<string, int> tags)
 		{
 			var game = new Game(appId, name, detaildDescription, userScore, reviewAmount, owners, initialPrice);
 
