@@ -32,7 +32,6 @@ namespace WebAppTest.Models
 			{
 				InitialPrice = 0;
 			}
-				
 		}
 		public void UpdateInitialPrice(int? newInitPrice)
 		{

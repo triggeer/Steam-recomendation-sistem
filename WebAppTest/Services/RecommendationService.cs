@@ -1,4 +1,6 @@
-﻿using System.Numerics.Tensors;
+﻿using System.Collections;
+using System.Numerics.Tensors;
+using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebAppTest.Data;
@@ -107,10 +109,9 @@ namespace WebAppTest.Services
 			return vector; // гуд
 		}
 
-		public async Task<List<RecommendationDto>> FormRecommendationListAsync(string userId)
+		private async Task<Dictionary<string, double>> FormUserTagsDict(string userId)
 		{
-			var list = new List<RecommendationDto>();
-			var userVector = await FormUserTagVector(userId);
+			UserVectorResponse userVector = await FormUserTagVector(userId);
 			/*
 			 * {
 				  "2D": 0.31809245060735336,
@@ -127,86 +128,105 @@ namespace WebAppTest.Services
 				}
 			 */
 			Dictionary<string, double> userTags = userVector.TagStrength;
-			/* получаем все id игр из БД
-			 * для каждого id берем игру из БД
-			 */
+			return userTags;
+		}
 
-			var userGames = await _userService.GetUserGamesIdList(userId);
-			var userIds = userGames.Select(x => x.AppId).ToList();
+		//public async Task<List<RecommendationDto>> FormRecommendationListAsync(string userId)
+		//{
+		//	var list = new List<RecommendationDto>();
+		//	var userVector = await FormUserTagVector(userId);
+		//	/*
+		//	 * {
+		//		  "2D": 0.31809245060735336,
+		//		  "3D": 0.09755129007135584,
+		//		  "4X": 0.007433650640747398,
+		//		  "VR": 0.062164114246365025,
+		//		  "Elf": 0.010591989430834014,
+		//		  "FMV": 0.013916809731422241,
+		//		  "FPS": 0.21931425216181996,
+		//		  "PvE": 0.08735315933855649,
+		//		  "PvP": 0.1670017616192241,
+		//		  "RPG": 0.3379300102282034,
+		//		  ...
+		//		}
+		//	 */
+		//	Dictionary<string, double> userTags = userVector.TagStrength;
+		//	/* получаем все id игр из БД
+		//	 * для каждого id берем игру из БД
+		//	 */
 
-			var games = await _context.Games.Select(
-				g => new 
-				{ 
-					g.SteamAppId, 
-					g.Name, 
-					g.Owners,
-					g.UserScore,
-					g.ReviewAmount,
-					g.GameTags
-				}).ToListAsync();
-			
-			foreach (var game in games)
-			{
-				if (!userIds.Contains(game.SteamAppId))
-				{
-					var gameVector = await _userService.GetGameTagsStrengh(game.SteamAppId);
-					Dictionary<string, double> gameTags = gameVector[game.SteamAppId.ToString()];
-					double result = await CosSimilarity(userTags, gameTags);
-					/*
-						Monster Hunter: World: --> 0,5835905493661762 <---
-						ELDEN RING NIGHTREIGN: --> 0,5826818525389187 <--- 
-						Valheim: --> 0,5805596998270341 <---
-				 */
-					int reviewAmount = game.ReviewAmount;
-					double score = game.UserScore;
-					// минимальное количество голосов, необходимое для того, чтобы рейтинг стал значимым
-					int min = 50000;
-					// средний рейтинг среди всех объектов в базе
-					double avgScore = 0.5;
-					
-					double rating = ((reviewAmount * score) + (min * avgScore)) / (reviewAmount + min);
-					
-					result *= rating;
+		//	var userGames = await _userService.GetUserGamesIdList(userId);
+		//	var userIds = userGames.Select(x => x.AppId).ToList();
 
-					var tags = new List<TagFromDb>();
+		//	var games = await _context.Games.Select(
+		//		g => new 
+		//		{ 
+		//			g.SteamAppId, 
+		//			g.Name, 
+		//			g.Owners,
+		//			g.UserScore,
+		//			g.ReviewAmount,
+		//			g.GameTags
+		//		}).ToListAsync();
 
-					foreach (var tag in game.GameTags)
-					{
-						var newTag = new TagFromDb { Id = tag.TagId, Name = tag.Tag.Name};
-						tags.Add(newTag);
-					}
+		//	foreach (var game in games)
+		//	{
+		//		if (!userIds.Contains(game.SteamAppId))
+		//		{
+		//			var gameVector = await _userService.GetGameTagsStrengh(game.SteamAppId);
+		//			Dictionary<string, double> gameTags = gameVector[game.SteamAppId.ToString()];
+		//			double result = await CosSimilarity(userTags, gameTags);
+		//			/*
+		//				Monster Hunter: World: --> 0,5835905493661762 <---
+		//				ELDEN RING NIGHTREIGN: --> 0,5826818525389187 <--- 
+		//				Valheim: --> 0,5805596998270341 <---
+		//			*/
+		//			int reviewAmount = game.ReviewAmount;
+		//			double score = game.UserScore;
+		//			// минимальное количество голосов, необходимое для того, чтобы рейтинг стал значимым
+		//			int min = 50000;
+		//			// средний рейтинг среди всех объектов в базе
+		//			double avgScore = 0.5;
 
-					if (result != 0)
-					{
-						list.Add(new RecommendationDto
-						{
-							GameId = game.SteamAppId,
-							GameName = game.Name,
-							CosSimilarity = result,
-							GameTags = tags
-						});
-					}
-					
-				}
-			}
-			var sortedList = list.OrderByDescending(r => r.CosSimilarity).ToList();
-			
+		//			double rating = ((reviewAmount * score) + (min * avgScore)) / (reviewAmount + min);
+
+		//			result *= rating;
+
+		//			var tags = new List<TagFromDb>();
+
+		//			foreach (var tag in game.GameTags)
+		//			{
+		//				var newTag = new TagFromDb { Id = tag.TagId, Name = tag.Tag.Name};
+		//				tags.Add(newTag);
+		//			}
+
+		//			if (result > 0)
+		//			{
+		//				list.Add(new RecommendationDto
+		//				{
+		//					GameId = game.SteamAppId,
+		//					GameName = game.Name,
+		//					CosSimilarity = result,
+		//					GameTags = tags
+		//				});
+		//			}
+
+		//		}
+		//	}
+		//	var sortedList = list.OrderByDescending(r => r.CosSimilarity).ToList();
+
+
+		//	return sortedList;
+		//}
+
+		public async Task<List<RecommendationDto>> FormRecommendationListAsync(string userId)
+		{
+			List<RecommendationDto> list = await FormUnsortedRecommendationList(userId);
+
+			// сортируем по рейтингу схожести
+			List<RecommendationDto> sortedList = list.OrderByDescending(r => r.CosSimilarity).ToList();
 
 			return sortedList;
-			// +- 4 секунды для существующих векторов
-			
-			//var idList = await _context.Games.Select(g => g.SteamAppId).ToListAsync();
-			//foreach (var gameId in idList)
-			//{
-			//	var gameVector = await _userService.GetGameTagsStrengh(gameId);
-			//	Dictionary<string, double> gameTags = gameVector[gameId.ToString()];
-			//	double result = await CosSimilarity(userTags, gameTags);
-			//	list.Add(gameId, result);
-			//}
-			//Dictionary<int, double> sortedDict = list
-			//.OrderByDescending(pair => pair.Value)
-			//.ToDictionary(pair => pair.Key, pair => pair.Value);
-			//return sortedDict;
 		}
 
 		//public async Task<List<RecommendationDto>> FormRecomendationsOnTagAsync(string userId, int tagId)
@@ -241,5 +261,122 @@ namespace WebAppTest.Services
 
 			return result;
 		}
+
+		public async Task<List<RecommendationDto>> ForUniqueRecomendationsAsync(string userId)
+		{
+			var uniqueList = new List<RecommendationDto>();
+			List<RecommendationDto> recGames = await FormUnsortedRecommendationList(userId);
+			
+			var userTags = await FormUserTagsDict(userId);
+
+			var sortedTags = userTags.OrderByDescending(x => x.Value).ToList();
+
+			foreach (var tag in sortedTags)
+			{
+				foreach (var game in recGames)
+				{
+					if ( (!uniqueList.Contains(game)) && (game.GameTags.Any(t => t.Name == tag.Key)) )
+					{
+						uniqueList.Add(game);
+						break;
+					}
+				}
+			}
+
+			return uniqueList;
+
+		}
+
+		private async Task<RecommendationDto> CalculateRecomendationRating(Dictionary<string, double> userTags, Game game)
+		{
+			var gameVector = await _userService.GetGameTagsStrengh(game.SteamAppId);
+			Dictionary<string, double> gameTags = gameVector[game.SteamAppId.ToString()];
+			double similarity = await CosSimilarity(userTags, gameTags);
+			/*
+				Monster Hunter: World: --> 0,5835905493661762 <---
+				ELDEN RING NIGHTREIGN: --> 0,5826818525389187 <--- 
+				Valheim: --> 0,5805596998270341 <---
+			*/
+			int reviewAmount = game.ReviewAmount;
+			double score = game.UserScore;
+
+			double rating = CalculateBayesRaiting(reviewAmount, score);
+
+			similarity *= rating;
+
+			var tags = new List<TagFromDb>();
+
+			foreach (var tag in game.GameTags)
+			{
+				var newTag = new TagFromDb { Id = tag.TagId, Name = tag.Tag.Name };
+				tags.Add(newTag);
+			}
+
+			RecommendationDto recommendation = new RecommendationDto
+			{
+				GameId = game.SteamAppId,
+				GameName = game.Name,
+				CosSimilarity = similarity,
+				GameTags = tags
+			};
+
+			return recommendation;
+		}
+
+		private static double CalculateBayesRaiting(int reviewAmount, double score)
+		{
+			// минимальное количество голосов, необходимое для того, чтобы рейтинг стал значимым
+			const int min = 50000;
+			// средний рейтинг для всех объектов в базе
+			const double avgScore = 0.5;
+
+			double rating = ((reviewAmount * score) + (min * avgScore)) / (reviewAmount + min);
+			return rating;
+		}
+
+		private async Task<List<RecommendationDto>> FormUnsortedRecommendationList(string userId)
+		{
+			var list = new List<RecommendationDto>();
+			/*
+			 * {
+				  "2D": 0.31809245060735336,
+				  "3D": 0.09755129007135584,
+				  "4X": 0.007433650640747398,
+				  "VR": 0.062164114246365025,
+				  "Elf": 0.010591989430834014,
+				  "FMV": 0.013916809731422241,
+				  "FPS": 0.21931425216181996,
+				  "PvE": 0.08735315933855649,
+				  "PvP": 0.1670017616192241,
+				  "RPG": 0.3379300102282034,
+				  ...
+				}
+			 */
+			Dictionary<string, double> userTags = await FormUserTagsDict(userId);
+			/* получаем все id игр из БД
+			 * для каждого id берем игру из БД
+			 */
+
+			List<OwnedGameDto> userGames = await _userService.GetUserGamesIdList(userId);
+			List<int> userIds = userGames.Select(x => x.AppId).ToList();
+
+			var games = await _context.Games.ToListAsync();
+
+			foreach (var game in games)
+			{
+				if (!userIds.Contains(game.SteamAppId))
+				{
+					RecommendationDto recommendation = await CalculateRecomendationRating(userTags, game);
+
+					if (recommendation.CosSimilarity > 0)
+					{
+						list.Add(recommendation);
+					}
+				}
+			}
+
+			return list;
+		}
+
 	}
 }
