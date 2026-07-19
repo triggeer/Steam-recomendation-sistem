@@ -268,30 +268,28 @@ namespace WebAppTest.Services
 		}
 
 		
+		/// ??????
+		//public async Task<Dictionary<string, Dictionary<string, double>>> FormGameTagVector(int gameId)
+		//{
+		//	/*
+		//	 * DS3 = {
+		//			RPG: 0.82,
+		//			OpenWorld: 0.65,
+		//			Fantasy: 0.54,
+		//			SoulsLike: 0.71,
+		//			StoryRich: 0.33,
+		//			PvP: 0.05
+		//		}
+		//	 */
+		//	var vector = new Dictionary<string, Dictionary<string, double>>();
+		//	bool exists = await _dataGainService.CheckGameExistense(gameId);
+		//	if (!exists)
+		//	{
+		//		await _steamService.ImportGameAsync(gameId);	
+		//	}
 
-		public async Task<Dictionary<string, Dictionary<string, double>>> FormGameTagVector(int gameId)
-		{
-			/*
-			 * DS3 = {
-					RPG: 0.82,
-					OpenWorld: 0.65,
-					Fantasy: 0.54,
-					SoulsLike: 0.71,
-					StoryRich: 0.33,
-					PvP: 0.05
-				}
-			 */
-			var vector = new Dictionary<string, Dictionary<string, double>>();
-			bool exists = await _dataGainService.CheckGameExistense(gameId);
-			if (!exists)
-			{
-				await _steamService.ImportGameAsync(gameId);	
-			}
-
-
-
-			return vector;
-		}
+		//	return vector;
+		//}
 		//							"123 (ds3)": {rpg:0.5, sols-like:0.7}
 		public async Task<Dictionary<string, Dictionary<string, double>>> GetGameTagsStrengh(int gameId)
 		{
@@ -304,6 +302,10 @@ namespace WebAppTest.Services
 
 			GameResponse game = await _steamService.GetGame(gameId);
 
+			if (game == null)
+			{
+				return null;
+			}
 			var vector = new Dictionary<string, Dictionary<string, double>> { [gameId.ToString()] = [] };
 
 			int counter = 0;
@@ -329,9 +331,52 @@ namespace WebAppTest.Services
 					}
 				}
 			}
-			return vector;
 
-			
+			return vector;
+		}
+
+		public async Task<Dictionary<string, double>> GetGameTagsStrengh1(int gameId)
+		{
+			bool exists = await _dataGainService.CheckGameExistense(gameId);
+
+			if (!exists)
+			{
+				await _steamService.ImportGameAsync(gameId);
+			}
+
+			GameResponse game = await _steamService.GetGame(gameId);
+
+			if (game == null)
+			{
+				return null;
+			}
+			var vector = new Dictionary<string, double>();
+
+			int counter = 0;
+
+			foreach (SpyTagDto tag in game.Tags)
+			{
+				counter += tag.Weight;
+			}
+
+			foreach (SpyTagDto tag in game.Tags)
+			{
+				if (game.Tags != null)
+				{
+					double tStrengh = (double)tag.Weight / counter;
+					//				 "123 (ds3)":			 {rpg:			0.5,...}	
+					if (vector.TryGetValue(tag.Name, out double currentValue))
+					{
+						vector[tag.Name] = currentValue + tStrengh;
+					}
+					else
+					{//		        "123 (ds3)":	  {rpg:		0.5,...}	
+						vector.Add(tag.Name, tStrengh);
+					}
+				}
+			}
+
+			return vector;
 		}
 
 

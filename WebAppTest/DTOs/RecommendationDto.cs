@@ -6,7 +6,8 @@ namespace WebAppTest.DTOs
 	{
 		public int GameId { get; set; }
 		public string GameName { get; set; }
-		public double CosSimilarity {  get; set; }
-		public List<TagFromDb> GameTags { get; set; }
+		public double Score {  get; set; }
+		//public List<TagFromDb> GameTags { get; set; }
+		public List<RecommendedGameTag> GameTags { get; set; }
 	}
 }

@@ -107,7 +107,7 @@ namespace WebAppTest.Services
 		/* метод async потаму-что надо ждать, а Task значит выполнение работы метода без возврата чего либо
 												+ Task а не void т.к. Task можно await
 		*/
-		public async Task ImportGameAsync(int appId)
+		public async Task<bool> ImportGameAsync(int appId)
 		{
 			bool exitsts = await _dataGainService.CheckGameExistense(appId);
 			if (!exitsts)
@@ -133,10 +133,11 @@ namespace WebAppTest.Services
 					initialPrice, genres, tags);
 
 					await _createService.AddGame(game);
+					return true;
 				}
-				else return;
+				else return false;
 			}
-			else return;
+			else return false;
 		}
 
 		public async Task UpdateGame(int appId)

@@ -8,6 +8,7 @@ using WebAppTest.DTOs;
 using WebAppTest.Interfaces;
 using WebAppTest.Migrations;
 using WebAppTest.Models;
+using WebAppTest.Services;
 
 namespace WebAppTest.Services
 {
@@ -224,7 +225,7 @@ namespace WebAppTest.Services
 			List<RecommendationDto> list = await FormUnsortedRecommendationList(userId);
 
 			// сортируем по рейтингу схожести
-			List<RecommendationDto> sortedList = list.OrderByDescending(r => r.CosSimilarity).ToList();
+			List<RecommendationDto> sortedList = list.OrderByDescending(r => r.Score).ToList();
 
 			return sortedList;
 		}
@@ -248,14 +249,15 @@ namespace WebAppTest.Services
 		{
 			var list = new List<RecommendationDto>();
 			var recomendations = await FormRecommendationListAsync(userId);
+			var tag = await _context.Tags.FirstOrDefaultAsync(x => x.Id == tagId);
 			foreach (var game in recomendations)
 			{
-				if (game.GameTags.Any(x => x.Id == tagId))
+				if (game.GameTags.Any(x => x.Name == tag.Name))
 				{
 					list.Add(game);
 				}
 			}
-			var tag = await _context.Tags.FirstOrDefaultAsync(x => x.Id == tagId);
+			//var tag = await _context.Tags.FirstOrDefaultAsync(x => x.Id == tagId);
 
 			var result = new RecommendationsOnTeg{ RecList = list, tag = tag.Name};
 
@@ -265,9 +267,9 @@ namespace WebAppTest.Services
 		public async Task<List<RecommendationDto>> ForUniqueRecomendationsAsync(string userId)
 		{
 			var uniqueList = new List<RecommendationDto>();
-			List<RecommendationDto> recGames = await FormUnsortedRecommendationList(userId);
+			List<RecommendationDto> recGames = await FormRecommendationListAsync(userId);
 			
-			var userTags = await FormUserTagsDict(userId);
+			Dictionary<string, double> userTags = await FormUserTagsDict(userId);
 
 			var sortedTags = userTags.OrderByDescending(x => x.Value).ToList();
 
@@ -277,14 +279,21 @@ namespace WebAppTest.Services
 				{
 					if ( (!uniqueList.Contains(game)) && (game.GameTags.Any(t => t.Name == tag.Key)) )
 					{
+						if (uniqueList.Count > 0)
+						{
+							var game1Tags = await _userService.GetGameTagsStrengh1(game.GameId);
+							var game2Tags = await _userService.GetGameTagsStrengh1(uniqueList[0].GameId);
+							double similarity = await CosSimilarity(game1Tags, game2Tags);
+						}
 						uniqueList.Add(game);
+						recGames.Remove(game);
 						break;
 					}
 				}
 			}
 
-			return uniqueList;
-
+			var sortedList = uniqueList.OrderByDescending(x => x.Score).ToList();
+			return sortedList;
 		}
 
 		private async Task<RecommendationDto> CalculateRecomendationRating(Dictionary<string, double> userTags, Game game)
@@ -302,13 +311,29 @@ namespace WebAppTest.Services
 
 			double rating = CalculateBayesRaiting(reviewAmount, score);
 
-			similarity *= rating;
+			double finalScore = similarity * rating;
 
-			var tags = new List<TagFromDb>();
+			//var tags = new List<TagFromDb>();
 
-			foreach (var tag in game.GameTags)
+			//foreach (var tag in game.GameTags)
+			//{
+			//	var newTag = new TagFromDb { Id = tag.TagId, Name = tag.Tag.Name };
+			//	tags.Add(newTag);
+			//}
+
+			// "123 (ds3)":	  { rpg: 0.5, sols-like:0.7,...}
+			var tagVector = await _userService.GetGameTagsStrengh(game.SteamAppId);
+
+			var tags = new List<RecommendedGameTag>();
+
+			foreach (var tag in tagVector[game.SteamAppId.ToString()])
 			{
-				var newTag = new TagFromDb { Id = tag.TagId, Name = tag.Tag.Name };
+				var newTag = new RecommendedGameTag
+				{ 
+				//Id = tag.TagId, 
+				Name = tag.Key,
+				Strength = tag.Value
+				};
 				tags.Add(newTag);
 			}
 
@@ -316,7 +341,7 @@ namespace WebAppTest.Services
 			{
 				GameId = game.SteamAppId,
 				GameName = game.Name,
-				CosSimilarity = similarity,
+				Score = finalScore,
 				GameTags = tags
 			};
 
@@ -368,7 +393,7 @@ namespace WebAppTest.Services
 				{
 					RecommendationDto recommendation = await CalculateRecomendationRating(userTags, game);
 
-					if (recommendation.CosSimilarity > 0)
+					if (recommendation.Score > 0)
 					{
 						list.Add(recommendation);
 					}
@@ -376,6 +401,30 @@ namespace WebAppTest.Services
 			}
 
 			return list;
+		}
+
+		public async Task MMR(List<RecommendationDto> recGames, Dictionary<string, double> userTags)
+		{
+			var uniqueList = new List<RecommendationDto>();
+
+			foreach (var tag in userTags)
+			{
+				foreach (var game in recGames)
+				{
+					if (game.GameTags.Any(t => t.Name == tag.Key))
+					{
+						if (uniqueList.Count > 0)
+						{
+							var game1Tags = await _userService.GetGameTagsStrengh1(game.GameId);
+							var game2Tags = await _userService.GetGameTagsStrengh1(uniqueList[0].GameId);
+							double similarity = await CosSimilarity(game1Tags, game2Tags);
+						}
+						uniqueList.Add(game);
+						recGames.Remove(game);
+						break;
+					}
+				}
+			}
 		}
 
 	}

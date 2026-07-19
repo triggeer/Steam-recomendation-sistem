@@ -53,7 +53,8 @@ namespace WebAppTest.Controllers
 		[HttpGet]
 		public async Task<IActionResult> FormRecommendationList(string userId)
 		{
-			var cosSimList = await _recommendationService.FormRecommendationListAsync(userId);
+			//var cosSimList = await _recommendationService.FormRecommendationListAsync(userId);
+			var cosSimList = await _recommendationService.ForUniqueRecomendationsAsync(userId);
 			return View(cosSimList);
 		}
 
