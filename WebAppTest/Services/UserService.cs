@@ -361,23 +361,69 @@ namespace WebAppTest.Services
 
 			foreach (SpyTagDto tag in game.Tags)
 			{
-				if (game.Tags != null)
+				if (game.Tags == null)
+					return new Dictionary<string, double>();
+					
+				
+
+				double tStrengh = (double)tag.Weight / counter;
+				//				 "123 (ds3)":			 {rpg:			0.5,...}	
+				if (vector.TryGetValue(tag.Name, out double currentValue))
 				{
-					double tStrengh = (double)tag.Weight / counter;
-					//				 "123 (ds3)":			 {rpg:			0.5,...}	
-					if (vector.TryGetValue(tag.Name, out double currentValue))
-					{
-						vector[tag.Name] = currentValue + tStrengh;
-					}
-					else
-					{//		        "123 (ds3)":	  {rpg:		0.5,...}	
-						vector.Add(tag.Name, tStrengh);
-					}
+					vector[tag.Name] = currentValue + tStrengh;
+				}
+				else
+				{//		        "123 (ds3)":	  {rpg:		0.5,...}	
+					vector.Add(tag.Name, tStrengh);
 				}
 			}
 
 			return vector;
 		}
+
+		//public async Task<Dictionary<string, double>> GetGameTagsStrengh2(int gameId)
+		//{
+		//	bool exists = await _dataGainService.CheckGameExistense(gameId);
+
+		//	if (!exists)
+		//	{
+		//		await _steamService.ImportGameAsync(gameId);
+		//	}
+
+		//	GameResponse game = await _steamService.GetGame(gameId);
+
+		//	if (game == null)
+		//	{
+		//		return null;
+		//	}
+		//	var vector = new Dictionary<string, double>();
+
+		//	int counter = 0;
+
+		//	foreach (SpyTagDto tag in game.Tags)
+		//	{
+		//		counter += tag.Weight;
+		//	}
+
+		//	foreach (SpyTagDto tag in game.Tags)
+		//	{
+		//		if (game.Tags != null)
+		//		{
+		//			double tStrengh = (double)tag.Weight / counter;
+		//			//				 "123 (ds3)":			 {rpg:			0.5,...}	
+		//			if (vector.TryGetValue(tag.Name, out double currentValue))
+		//			{
+		//				vector[tag.Name] = currentValue + tStrengh;
+		//			}
+		//			else
+		//			{//		        "123 (ds3)":	  {rpg:		0.5,...}	
+		//				vector.Add(tag.Name, tStrengh);
+		//			}
+		//		}
+		//	}
+
+		//	return vector;
+		//}
 
 
 		public async Task<UserProfile> CreateUserVector(string userId)

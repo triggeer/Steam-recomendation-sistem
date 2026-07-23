@@ -11,7 +11,8 @@ namespace WebAppTest.Interfaces
 		double userScore,
 		int reviewAmount,
 		long owners,
-		int? initialPrice, 
+		int? initialPrice,
+		double vectorLength,
 		List<string> genres, 
 		Dictionary<string, int> tags);
 		Task AddGame(Game game);

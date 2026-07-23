@@ -12,5 +12,6 @@ namespace WebAppTest.Interfaces
 		Task<List<RecommendationDto>> FormRecommendationListAsync(string userId);
 		Task<RecommendationsOnTeg> FormRecomendationsOnTagAsync(string userId, int tagId);
 		Task<List<RecommendationDto>> ForUniqueRecomendationsAsync(string userId);
+		Task AddGameVector();
 	}
 }

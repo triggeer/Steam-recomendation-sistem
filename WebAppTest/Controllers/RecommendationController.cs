@@ -64,5 +64,11 @@ namespace WebAppTest.Controllers
 			RecommendationsOnTeg list = await _recommendationService.FormRecomendationsOnTagAsync(userId, tagId);	
 			return View(list);
 		}
+
+		[HttpGet]
+		public async Task UpdateGameVectors()
+		{
+			await _recommendationService.AddGameVector();
+		}
 	}
 }

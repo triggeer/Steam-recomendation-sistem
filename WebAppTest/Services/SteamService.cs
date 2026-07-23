@@ -125,12 +125,15 @@ namespace WebAppTest.Services
 
 					int? initialPrice = await _dataGainService.GetInitPrice(appId);
 
+					double vectorLength = 0;
+
 					List<string> genres = await _dataGainService.GetGenres(appId);
+					
 
 					Game game = await _createService.GameCreate(
 					appId, steamDto.Name, steamDto.DetailedDescription,
 					userScore, reviewAmount, owners,
-					initialPrice, genres, tags);
+					initialPrice, vectorLength, genres, tags);
 
 					await _createService.AddGame(game);
 					return true;
