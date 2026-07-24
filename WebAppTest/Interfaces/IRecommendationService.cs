@@ -13,5 +13,11 @@ namespace WebAppTest.Interfaces
 		Task<RecommendationsOnTeg> FormRecomendationsOnTagAsync(string userId, int tagId);
 		Task<List<RecommendationDto>> ForUniqueRecomendationsAsync(string userId);
 		Task AddGameVector();
+		Task<double> CosSimilarity1(
+			Dictionary<int, double> firstGameTags,
+			Dictionary<int, double> secondGameTags,
+			double fristVectorLen, double secondVectorLen
+		);
+		Task<List<RecommendationDto>> ForUniqueRecomendationsAsync1(string userId);
 	}
 }

@@ -54,7 +54,8 @@ namespace WebAppTest.Controllers
 		public async Task<IActionResult> FormRecommendationList(string userId)
 		{
 			//var cosSimList = await _recommendationService.FormRecommendationListAsync(userId);
-			var cosSimList = await _recommendationService.ForUniqueRecomendationsAsync(userId);
+			//var cosSimList = await _recommendationService.ForUniqueRecomendationsAsync(userId);
+			var cosSimList = await _recommendationService.ForUniqueRecomendationsAsync1(userId);
 			return View(cosSimList);
 		}
 
