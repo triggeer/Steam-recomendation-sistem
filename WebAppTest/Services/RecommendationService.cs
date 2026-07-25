@@ -83,7 +83,7 @@ namespace WebAppTest.Services
 			return counter / (userNorm * gameNorm);
 		}
 
-		public async Task<double> CosSimilarity1(
+		public double CosSimilarity1(
 			Dictionary<int, double> firstGameTags, 
 			Dictionary<int, double> secondGameTags,
 			double fristVectorLen, double secondVectorLen
@@ -233,100 +233,100 @@ namespace WebAppTest.Services
 
 
 
-		public async Task<List<RecommendationDto>> ForUniqueRecomendationsAsync(string userId)
-		{
-			var uniqueList = new List<RecommendationCandidate>();
-			List<RecommendationCandidate> recGames = await FormUnsortedRecommendationList(userId);
-			List<RecommendationCandidate> sortedCandidates1 = recGames.OrderByDescending(x => x.UserScore).ToList();
+		//public async Task<List<RecommendationDto>> ForUniqueRecomendationsAsync(string userId)
+		//{
+		//	var uniqueList = new List<RecommendationCandidate>();
+		//	List<RecommendationCandidate> recGames = await FormUnsortedRecommendationList(userId);
+		//	List<RecommendationCandidate> sortedCandidates1 = recGames.OrderByDescending(x => x.UserScore).ToList();
 
-			Dictionary<(int, int), double> similaritys = new();
-
-
-			var sortedCandidates = new List<RecommendationCandidate>();
-			while (sortedCandidates.Count < 200)
-			{
-				foreach (var candidate in sortedCandidates1)
-				{
-					sortedCandidates.Add(candidate);
-					sortedCandidates1.Remove(candidate);
-					break;
-				}
-			}
+		//	Dictionary<(int, int), double> similaritys = new();
 
 
-			var first = sortedCandidates[0];
-			first.FinalScore = first.UserScore;
-			uniqueList.Add(first);
-			sortedCandidates.Remove(first);
-			// когда набралось 100 стоп
-			while (uniqueList.Count < 20)
-			{
-				// для каждого кандидата из рекомендаций
-				//(mhw, ggst, dota,...) НЕВЫБРАННЫЕ ИГРЫ
-				foreach (var candidate in sortedCandidates)
-				{
+		//	var sortedCandidates = new List<RecommendationCandidate>();
+		//	while (sortedCandidates.Count < 200)
+		//	{
+		//		foreach (var candidate in sortedCandidates1)
+		//		{
+		//			sortedCandidates.Add(candidate);
+		//			sortedCandidates1.Remove(candidate);
+		//			break;
+		//		}
+		//	}
 
-					// для всех оставшихся игр из кандидатов
-					// сравниваем похожеcть тегов
-					// каждый вектор ВЫБРАННОЙ игры
-					// (valh, grounded) ВЫБРАННЫЕ
-					foreach (var chosenGame in uniqueList)
-					{
 
-						double similarity = 0;
+		//	var first = sortedCandidates[0];
+		//	first.FinalScore = first.UserScore;
+		//	uniqueList.Add(first);
+		//	sortedCandidates.Remove(first);
+		//	// когда набралось 100 стоп
+		//	while (uniqueList.Count < 20)
+		//	{
+		//		// для каждого кандидата из рекомендаций
+		//		//(mhw, ggst, dota,...) НЕВЫБРАННЫЕ ИГРЫ
+		//		foreach (var candidate in sortedCandidates)
+		//		{
 
-						int minId = Math.Min(chosenGame.Id, candidate.Id);
-						int maxId = Math.Max(chosenGame.Id, candidate.Id);
-						// ЕСЛИ УЖЕ ПОСЧИТАЛИ ПОХОЖЕСТЬ
-						//							(valh, mhw)
-						if (similaritys.ContainsKey((minId, maxId)))
-						{
-							continue;
-						}
-						// ЕСЛИ НЕ СЧИТАЛИ
-						else
-						{
-							// valh
-							// находим силу тегов ВЫБРАННОЙ ИГРЫ
-							/*
-							 * ВЕКТОРА ХРАНИМ В БД
-							 */
-							var chosenTags = await _userService.GetGameTagsStrengh1(chosenGame.Id);
-							var candidateTags = await _userService.GetGameTagsStrengh1(candidate.Id);
-							similarity = await CosSimilarity(chosenTags, candidateTags);
-							similaritys.Add((minId, maxId), similarity);
-						}
+		//			// для всех оставшихся игр из кандидатов
+		//			// сравниваем похожеcть тегов
+		//			// каждый вектор ВЫБРАННОЙ игры
+		//			// (valh, grounded) ВЫБРАННЫЕ
+		//			foreach (var chosenGame in uniqueList)
+		//			{
 
-						// вводим максимальную схожесть с одной из уже выбранных игр
-						candidate.MaxSimilarity = Math.Max(similarity, candidate.MaxSimilarity);
+		//				double similarity = 0;
+
+		//				int minId = Math.Min(chosenGame.Id, candidate.Id);
+		//				int maxId = Math.Max(chosenGame.Id, candidate.Id);
+		//				// ЕСЛИ УЖЕ ПОСЧИТАЛИ ПОХОЖЕСТЬ
+		//				//							(valh, mhw)
+		//				if (similaritys.ContainsKey((minId, maxId)))
+		//				{
+		//					continue;
+		//				}
+		//				// ЕСЛИ НЕ СЧИТАЛИ
+		//				else
+		//				{
+		//					// valh
+		//					// находим силу тегов ВЫБРАННОЙ ИГРЫ
+		//					/*
+		//					 * ВЕКТОРА ХРАНИМ В БД
+		//					 */
+		//					var chosenTags = await _userService.GetGameTagsStrengh1(chosenGame.Id);
+		//					var candidateTags = await _userService.GetGameTagsStrengh1(candidate.Id);
+		//					similarity = await CosSimilarity1(chosenTags, candidateTags);
+		//					similaritys.Add((minId, maxId), similarity);
+		//				}
+
+		//				// вводим максимальную схожесть с одной из уже выбранных игр
+		//				candidate.MaxSimilarity = Math.Max(similarity, candidate.MaxSimilarity);
 
 								
-					}
-					//													если очень схоже с хоть одной из-
-					//													-уже выбранных игр то биг штраф
-					candidate.FinalScore = (0.8 * candidate.UserScore) - (0.2 * candidate.MaxSimilarity);
+		//			}
+		//			//													если очень схоже с хоть одной из-
+		//			//													-уже выбранных игр то биг штраф
+		//			candidate.FinalScore = (0.8 * candidate.UserScore) - (0.2 * candidate.MaxSimilarity);
 							
-				}
+		//		}
 
-				var winer = sortedCandidates.MaxBy(x => x.FinalScore);
+		//		var winer = sortedCandidates.MaxBy(x => x.FinalScore);
 
 
-				//добавляем игру
-				uniqueList.Add(winer);
-				sortedCandidates.Remove(winer);
+		//		//добавляем игру
+		//		uniqueList.Add(winer);
+		//		sortedCandidates.Remove(winer);
 				
-			}
+		//	}
 			
 
-			var list = new List<RecommendationDto>();
-			foreach (var candidate in uniqueList)
-			{
-				candidate.Game.Score = candidate.FinalScore;
-				list.Add(candidate.Game);
-			}
-			var sortedList = list.OrderByDescending(x => x.Score).ToList();
-			return sortedList;
-		}
+		//	var list = new List<RecommendationDto>();
+		//	foreach (var candidate in uniqueList)
+		//	{
+		//		candidate.Game.Score = candidate.FinalScore;
+		//		list.Add(candidate.Game);
+		//	}
+		//	var sortedList = list.OrderByDescending(x => x.Score).ToList();
+		//	return sortedList;
+		//}
 
 
 		public async Task<List<RecommendationDto>> ForUniqueRecomendationsAsync1(string userId)
@@ -337,27 +337,12 @@ namespace WebAppTest.Services
 
 			Dictionary<(int, int), double> similaritys = new();
 
-
-			//var sortedCandidates = new List<RecommendationCandidate>();
-			//while (sortedCandidates.Count < 200)
-			//{
-			//	foreach (var candidate in sortedCandidates1)
-			//	{
-			//		sortedCandidates.Add(candidate);
-			//		sortedCandidates1.Remove(candidate);
-			//		break;
-			//	}
-			//}
-
-
 			var first = sortedCandidates[0];
 			first.FinalScore = first.UserScore;
 			uniqueList.Add(first);
 			sortedCandidates.Remove(first);
 
-			var gameData = await _context.Games.Select(x => new { x.Id, x.SteamAppId, x.VectorLength}).ToListAsync();
 			// получаем словарь с id игры присвоенное стимом и  id игры в БД 
-			Dictionary<int, int> gameIds = gameData.ToDictionary(x => x.SteamAppId, x => x.Id);
 
 			var flatData = await _context.GameTags.ToListAsync();
 			// словарь тегов формата "123 (ds3)": { 3 (rpg): 0.5, 5 (sols-like):0.7,...}
@@ -368,9 +353,14 @@ namespace WebAppTest.Services
 					x => x.ToDictionary(t => t.TagId, t => t.Strength)
 				);
 
-			// когда набралось 100 стоп
+			Dictionary<int, double> vectorLengths = _context.Games.ToDictionary(x => x.Id, x => x.VectorLength);
+
 			while (uniqueList.Count < 500)
 			{
+				/*
+				 * MaxSimilarity не сбрасывается с каждым циклом, 
+				 * а копится, чтобы оставлять уже вычисленное сходство кандидата с уже выбранными играми
+				 */
 				// для каждого кандидата из рекомендаций
 				//(mhw, ggst, dota,...) НЕВЫБРАННЫЕ ИГРЫ
 				foreach (var candidate in sortedCandidates)
@@ -387,36 +377,18 @@ namespace WebAppTest.Services
 
 						int minId = Math.Min(chosenGame.Id, candidate.Id);
 						int maxId = Math.Max(chosenGame.Id, candidate.Id);
-						// ЕСЛИ УЖЕ ПОСЧИТАЛИ ПОХОЖЕСТЬ
-						//							(valh, mhw)
-						if (similaritys.ContainsKey((minId, maxId)))
+						if (!similaritys.ContainsKey((minId, maxId)))
 						{
-							continue;
-						}
-						// ЕСЛИ НЕ СЧИТАЛИ
-						else
-						{
-							// valh
-							// находим силу тегов ВЫБРАННОЙ ИГРЫ
-							/*
-							 * ВЕКТОРА ХРАНИМ В БД
-							 */
-							//						id стима				id в БД
-							if (gameIds.TryGetValue(chosenGame.Id, out int chosenGameId) && gameIds.TryGetValue(candidate.Id, out int candidateId))
-							{
-								// { 3 (rpg): 0.5, 5 (sols-like):0.7,...}
-								Dictionary<int, double> chosenTags1 = tags.FirstOrDefault(x => x.Key == chosenGameId).Value;
-								Dictionary<int, double> candidateTags1 = tags.FirstOrDefault(x => x.Key == candidateId).Value;
+							Dictionary<int, double> chosenTags1 = tags[chosenGame.Id];
+							Dictionary<int, double> candidateTags1 = tags[candidate.Id];
 
-								double chosenVectorLen = gameData.FirstOrDefault(x => x.Id == chosenGameId).VectorLength;
-								double candidateVectorLen = gameData.FirstOrDefault(x => x.Id == candidateId).VectorLength;
+							double chosenVectorLen = vectorLengths[chosenGame.Id];
+							double candidateVectorLen = vectorLengths[candidate.Id];
 
-								similarity = await CosSimilarity1(chosenTags1, candidateTags1, chosenVectorLen, candidateVectorLen);
-								similaritys.Add((minId, maxId), similarity);
-							}
+							similarity = CosSimilarity1(chosenTags1, candidateTags1, chosenVectorLen, candidateVectorLen);
+							similaritys.Add((minId, maxId), similarity);
 						}
 
-						// вводим максимальную схожесть с одной из уже выбранных игр
 						candidate.MaxSimilarity = Math.Max(similarity, candidate.MaxSimilarity);
 
 
@@ -428,7 +400,6 @@ namespace WebAppTest.Services
 				}
 
 				var winer = sortedCandidates.MaxBy(x => x.FinalScore);
-
 
 				//добавляем игру
 				uniqueList.Add(winer);
@@ -451,6 +422,17 @@ namespace WebAppTest.Services
 		private async Task<RecommendationCandidate> CalculateRecomendationRating(Dictionary<string, double> userTags, Game game)
 		{
 			var gameVector = await _userService.GetGameTagsStrengh(game.SteamAppId);
+			//var tagInfo = await _context.GameTags.ToListAsync();
+
+			//Dictionary<int, Dictionary<int, double>> tags = tagInfo
+			//	.GroupBy(x => x.GameId)
+			//	.ToDictionary(
+			//	x => x.Key, 
+			//	x => x.ToDictionary(t => t.TagId, t => t.Strength)
+			//	);
+
+			/////Dictionary<int, double> gameTags = tags[game.Id];
+
 			Dictionary<string, double> gameTags = gameVector[game.SteamAppId.ToString()];
 			double similarity = await CosSimilarity(userTags, gameTags);
 			/*
@@ -483,7 +465,9 @@ namespace WebAppTest.Services
 
 			RecommendationDto recommendationDto = new RecommendationDto
 			{
-				GameId = game.SteamAppId,
+				//GameId = game.SteamAppId,
+				// меняем seam ID на id БД
+				GameId = game.Id,
 				GameName = game.Name,
 				Score = finalScore,
 				GameTags = tags
@@ -542,8 +526,10 @@ namespace WebAppTest.Services
 
 			foreach (var game in games)
 			{
+				// если у пользователя нет игры с таким стим id делаем её рекомендацию со своим id
 				if (!userIds.Contains(game.SteamAppId))
 				{
+					// меняем seam ID на id БД
 					RecommendationCandidate recommendation = await CalculateRecomendationRating(userTags, game);
 
 					if (recommendation.UserScore > 0)
