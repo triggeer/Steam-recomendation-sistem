@@ -2,7 +2,7 @@
 {
 	public class UserVectorResponse
 	{
-		public Dictionary<string, double> TagStrength { get; set; } = [];
+		public Dictionary<int, double> TagStrength { get; set; } = [];
 		public double Length { get; set; }
 		public int GameAmount { get; set; }
 		public DateTime UpdatedAt { get; set; }

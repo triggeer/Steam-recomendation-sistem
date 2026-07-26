@@ -176,7 +176,7 @@ namespace WebAppTest.Services
 			return vector; // гуд
 		}
 
-		private async Task<Dictionary<string, double>> FormUserTagsDict(string userId)
+		private async Task<Dictionary<int, double>> FormUserTagsDict(string userId)
 		{
 			UserVectorResponse userVector = await FormUserTagVector(userId);
 			/*
@@ -194,7 +194,7 @@ namespace WebAppTest.Services
 				  ...
 				}
 			 */
-			Dictionary<string, double> userTags = userVector.TagStrength;
+			Dictionary<int, double> userTags = userVector.TagStrength;
 			return userTags;
 		}
 
@@ -220,7 +220,7 @@ namespace WebAppTest.Services
 			var tag = await _context.Tags.FirstOrDefaultAsync(x => x.Id == tagId);
 			foreach (var game in recomendations)
 			{
-				if (game.GameTags.Any(x => x.Name == tag.Name))
+				if (game.GameTags.Any(x => x.Key == tag.Id))
 				{
 					list.Add(game);
 				}
@@ -419,48 +419,36 @@ namespace WebAppTest.Services
 		}
 
 
-		private async Task<RecommendationCandidate> CalculateRecomendationRating(Dictionary<string, double> userTags, Game game)
+		private async Task<RecommendationCandidate> CalculateRecomendationRating(Dictionary<int, double> userTags, double userTagLength, Game game)
 		{
 			var gameVector = await _userService.GetGameTagsStrengh(game.SteamAppId);
-			//var tagInfo = await _context.GameTags.ToListAsync();
+			var tagInfo = await _context.GameTags.ToListAsync();
 
-			//Dictionary<int, Dictionary<int, double>> tags = tagInfo
-			//	.GroupBy(x => x.GameId)
-			//	.ToDictionary(
-			//	x => x.Key, 
-			//	x => x.ToDictionary(t => t.TagId, t => t.Strength)
-			//	);
+			Dictionary<int, Dictionary<int, double>> gameTagsInfo = tagInfo
+				.GroupBy(x => x.GameId)
+				.ToDictionary(
+				x => x.Key,
+				x => x.ToDictionary(t => t.TagId, t => t.Strength)
+				);
 
-			/////Dictionary<int, double> gameTags = tags[game.Id];
-
-			Dictionary<string, double> gameTags = gameVector[game.SteamAppId.ToString()];
-			double similarity = await CosSimilarity(userTags, gameTags);
-			/*
-				Monster Hunter: World: --> 0,5835905493661762 <---
-				ELDEN RING NIGHTREIGN: --> 0,5826818525389187 <--- 
-				Valheim: --> 0,5805596998270341 <---
-			*/
-			int reviewAmount = game.ReviewAmount;
-			double score = game.UserScore;
-
-			double rating = CalculateBayesRaiting(reviewAmount, score);
-
-			double finalScore = similarity * rating;
-
-			// "123 (ds3)":	  { rpg: 0.5, sols-like:0.7,...}
-			var tagVector = await _userService.GetGameTagsStrengh(game.SteamAppId);
-
-			var tags = new List<RecommendedGameTag>();
-
-			foreach (var tag in tagVector[game.SteamAppId.ToString()])
+			double finalScore = 0;
+			if (gameTagsInfo.TryGetValue(game.Id, out Dictionary<int, double> gameTags))
 			{
-				var newTag = new RecommendedGameTag
-				{
-					//Id = tag.TagId, 
-					Name = tag.Key,
-					Strength = tag.Value
-				};
-				tags.Add(newTag);
+				var gameTagLen = game.VectorLength;
+
+				//Dictionary<string, double> gameTags = gameVector[game.SteamAppId.ToString()];
+				double similarity = CosSimilarity1(userTags, gameTags, userTagLength, gameTagLen);
+				/*
+					Monster Hunter: World: --> 0,5835905493661762 <---
+					ELDEN RING NIGHTREIGN: --> 0,5826818525389187 <--- 
+					Valheim: --> 0,5805596998270341 <---
+				*/
+				int reviewAmount = game.ReviewAmount;
+				double score = game.UserScore;
+
+				double rating = CalculateBayesRaiting(reviewAmount, score);
+
+				finalScore = similarity * rating;
 			}
 
 			RecommendationDto recommendationDto = new RecommendationDto
@@ -470,7 +458,7 @@ namespace WebAppTest.Services
 				GameId = game.Id,
 				GameName = game.Name,
 				Score = finalScore,
-				GameTags = tags
+				GameTags = gameTags
 			};
 
 			RecommendationCandidate candiadate = new RecommendationCandidate
@@ -514,7 +502,9 @@ namespace WebAppTest.Services
 				  ...
 				}
 			 */
-			Dictionary<string, double> userTags = await FormUserTagsDict(userId);
+			Dictionary<int, double> userTags = await FormUserTagsDict(userId);
+			var userProfile = await _context.UserProfiles.FirstOrDefaultAsync(x => x.Id == userId);
+			double userTagLen = userProfile.Length;
 			/* получаем все id игр из БД
 			 * для каждого id берем игру из БД
 			 */
@@ -530,7 +520,7 @@ namespace WebAppTest.Services
 				if (!userIds.Contains(game.SteamAppId))
 				{
 					// меняем seam ID на id БД
-					RecommendationCandidate recommendation = await CalculateRecomendationRating(userTags, game);
+					RecommendationCandidate recommendation = await CalculateRecomendationRating(userTags, userTagLen, game);
 
 					if (recommendation.UserScore > 0)
 					{
@@ -542,29 +532,29 @@ namespace WebAppTest.Services
 			return list;
 		}
 
-		public async Task MMR(List<RecommendationDto> recGames, Dictionary<string, double> userTags)
-		{
-			var uniqueList = new List<RecommendationDto>();
+		//public async Task MMR(List<RecommendationDto> recGames, Dictionary<string, double> userTags)
+		//{
+		//	var uniqueList = new List<RecommendationDto>();
 
-			foreach (var tag in userTags)
-			{
-				foreach (var game in recGames)
-				{
-					if (game.GameTags.Any(t => t.Name == tag.Key))
-					{
-						if (uniqueList.Count > 0)
-						{
-							var game1Tags = await _userService.GetGameTagsStrengh1(game.GameId);
-							var game2Tags = await _userService.GetGameTagsStrengh1(uniqueList[0].GameId);
-							double similarity = await CosSimilarity(game1Tags, game2Tags);
-						}
-						uniqueList.Add(game);
-						recGames.Remove(game);
-						break;
-					}
-				}
-			}
-		}
+		//	foreach (var tag in userTags)
+		//	{
+		//		foreach (var game in recGames)
+		//		{
+		//			if (game.GameTags.Any(t => t.Name == tag.Key))
+		//			{
+		//				if (uniqueList.Count > 0)
+		//				{
+		//					var game1Tags = await _userService.GetGameTagsStrengh1(game.GameId);
+		//					var game2Tags = await _userService.GetGameTagsStrengh1(uniqueList[0].GameId);
+		//					double similarity = await CosSimilarity(game1Tags, game2Tags);
+		//				}
+		//				uniqueList.Add(game);
+		//				recGames.Remove(game);
+		//				break;
+		//			}
+		//		}
+		//	}
+		//}
 
 	}
 }

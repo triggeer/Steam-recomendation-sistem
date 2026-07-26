@@ -39,16 +39,16 @@ namespace WebAppTest.Controllers
 			return View(model);
 		}
 
-		[HttpGet]
-		public async Task<IActionResult> FormRecomendations(string userId, int gameId)
-		{
-			var userVector = await _recommendationService.FormUserTagVector(userId);
-			var gameVector = await _userService.GetGameTagsStrengh(gameId);
-			Dictionary<string, double> userTags = userVector.TagStrength;
-			Dictionary<string, double> gameTags = gameVector[gameId.ToString()];
-			double result = await _recommendationService.CosSimilarity(userTags, gameTags);
-			return View(result);
-		}
+		//[HttpGet]
+		//public async Task<IActionResult> FormRecomendations(string userId, int gameId)
+		//{
+		//	var userVector = await _recommendationService.FormUserTagVector(userId);
+		//	var gameVector = await _userService.GetGameTagsStrengh(gameId);
+		//	Dictionary<int, double> userTags = userVector.TagStrength;
+		//	Dictionary<string, double> gameTags = gameVector[gameId.ToString()];
+		//	double result = await _recommendationService.CosSimilarity1(userTags, gameTags);
+		//	return View(result);
+		//}
 
 		[HttpGet]
 		public async Task<IActionResult> FormRecommendationList(string userId)

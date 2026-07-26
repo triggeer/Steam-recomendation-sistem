@@ -9,6 +9,7 @@
 
 		public List<string> Genres { get; set; } = [];
 
-		public List<SpyTagDto> Tags { get; set; } = [];
+		//public List<SpyTagDto> Tags { get; set; } = [];
+		public List<SpyTag> Tags { get; set; } = [];
 	}
 }

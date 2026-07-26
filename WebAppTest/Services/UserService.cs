@@ -64,17 +64,17 @@ namespace WebAppTest.Services
 
 		public async Task<List<UserGameDto>> GetUserGames(string userId)
 		{
-			// получили спсиок (id, часы)
+			// получили спсиок (id STEAM, часы)
 			List<OwnedGameDto> list = await GetUserGamesIdList(userId);
 
 			// получаем только список id (все игры(id) пользователя)
-			var idList = list.Select(x => x.AppId).ToList();
+			List<int> idList = list.Select(x => x.AppId).ToList();
 
 			// возвращаем список игр по id (которые сейчас есть в БД)
-			var dbGames = await _steamService.GetGameList(idList);
+			List<Game> dbGames = await _steamService.GetGameList(idList);
 
 			// создаем список id игр пользователя (idList), которых ещё нет в БД (dbGames)
-			var missingIds = idList.Except(dbGames.Select(g => g.SteamAppId)).ToList();
+			List<int> missingIds = idList.Except(dbGames.Select(g => g.SteamAppId)).ToList();
 
 			// для каждого id в отсутствующих id
 			foreach (var id in missingIds)
@@ -90,7 +90,7 @@ namespace WebAppTest.Services
 			}
 
 			// вводим словарь для "быстрого поиска"
-			var gameDictionary = dbGames.ToDictionary(g => g.SteamAppId);
+			Dictionary<int, Game> gameDictionary = dbGames.ToDictionary(g => g.SteamAppId);
 
 			// вводим список ИГОР (ТАМ ИМЯ, ЧАСЫ, ТЕГИ И ВСЯ ХЕРНЯ)
 			var games = new List<UserGameDto>();
@@ -111,18 +111,22 @@ namespace WebAppTest.Services
 				//Game? game = gameDictionary[gameObj.AppId];
 				if (!gameDictionary.TryGetValue(gameObj.AppId, out var game))
 				{
-					await _steamService.ImportGameAsync(gameObj.AppId); continue;
+					// GAME GAME = CREATE GAME
+					// IMPORT GAME
+					await _steamService.ImportGameAsync(gameObj.AppId); 
+					continue;
 				}
 
 				games.Add(new UserGameDto
 				{
-					AppId = gameObj.AppId,
+					//
+					AppId = game.Id,
 					PlayTime = gameObj.PlayTime,
 					Name = game.Name,
 					Genres = game.GameGenres.Select(x => x.Genre.Name).ToList(),
-					Tags = game.GameTags.Select(x => new SpyTagDto
+					Tags = game.GameTags.Select(x => new SpyTag
 					{
-						Name = x.Tag.Name,
+						Id = x.Tag.Id, ///
 						Weight = x.Weight
 					}).ToList(),
 				});
@@ -173,21 +177,21 @@ namespace WebAppTest.Services
 		/// ///////////////
 
 
-		public async Task<Dictionary<string, Dictionary<string, double>>> GetUserGameTags(string userId)
+		public async Task<Dictionary<int, Dictionary<string, double>>> GetUserGameTags(string userId)
 		{               // RPG: {weight: 100, enterence: 3}
 			int counter = 0;
 			List<UserGameDto> games = await GetUserGames(userId);
-			var tags = new Dictionary<string, Dictionary<string, double>>();
+			var tags = new Dictionary<int, Dictionary<string, double>>();
 			foreach (UserGameDto game in games)
 			{
-				SpyTagDto nonGames = new SpyTagDto { Name = "Utilities" };
-				if (game.Tags.Any(t => t.Name == "Utilities" || t.Name == "Software"))
-				{
-					continue;
-				}
+				//SpyTagDto nonGames = new SpyTagDto { Name = "Utilities" };
+				//if (game.Tags.Any(t => t.Name == "Utilities" || t.Name == "Software"))
+				//{
+				//	continue;
+				//}
 				counter++;
 				int weightConunt = 0;
-				foreach (SpyTagDto tag in game.Tags)
+				foreach (SpyTag tag in game.Tags)
 				{
 					weightConunt += tag.Weight;
 				}
@@ -195,7 +199,7 @@ namespace WebAppTest.Services
 				playtime = double.Min(playtime, 100);
 				playtime = (playtime / 20);
 
-				foreach (SpyTagDto tag in game.Tags)
+				foreach (SpyTag tag in game.Tags)
 				{
 					if (game.Tags != null)
 					{
@@ -203,7 +207,7 @@ namespace WebAppTest.Services
 						// вводим счетчик вхождений для каждого тега
 						//int count = 0;
 						// если тег уже есть
-						if (tags.TryGetValue(tag.Name, out Dictionary<string, double> currentInnerDict))
+						if (tags.TryGetValue(tag.Id, out Dictionary<string, double> currentInnerDict))
 						{   //	RPG:	  {weight: 100, ent: 4}
 							/*11446
 							 * mk x = 0,7172449274855845
@@ -238,16 +242,16 @@ namespace WebAppTest.Services
 									если < 0.03 не очень релевантный 
 									=>>>>> вычисляем силу тега и записываем её вместо всеа
 								*/
-							tags[tag.Name]["weight"] = currentInnerDict["weight"] + tStrengh;
+							tags[tag.Id]["weight"] = currentInnerDict["weight"] + tStrengh;
 
-							tags[tag.Name]["enterence"] = currentInnerDict["enterence"] + 1;
+							tags[tag.Id]["enterence"] = currentInnerDict["enterence"] + 1;
 						}
 						else
 						{
 							var innerDict = new Dictionary<string, double>();
 							innerDict.Add("weight", tStrengh);
 							innerDict.Add("enterence", 1);
-							tags.Add(tag.Name, innerDict);
+							tags.Add(tag.Id, innerDict);
 						}
 
 					}
@@ -438,9 +442,10 @@ namespace WebAppTest.Services
 					PvP: 0.05
 				}
 		 	 */
-			var tags = await GetUserGameTags(userId);
+			Dictionary<int, Dictionary<string, double>> tags = await GetUserGameTags(userId);
 
-			Dictionary<string, double> userTags = new();
+
+			Dictionary<int, double> userTags = new();
 
 			foreach (var tag in tags)
 			{
