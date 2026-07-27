@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.Components.Forms.Mapping;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.Json;
 using Npgsql.TypeMapping;
 using WebAppTest.Data;
 using WebAppTest.DTOs;
@@ -355,6 +356,9 @@ namespace WebAppTest.Services
 
 			Dictionary<int, double> vectorLengths = _context.Games.ToDictionary(x => x.Id, x => x.VectorLength);
 
+			var chosenGame = new RecommendationCandidate();
+
+
 			while (uniqueList.Count < 500)
 			{
 				/*
@@ -370,14 +374,15 @@ namespace WebAppTest.Services
 					// сравниваем похожеcть тегов
 					// каждый вектор ВЫБРАННОЙ игры
 					// (valh, grounded) ВЫБРАННЫЕ
-					foreach (var chosenGame in uniqueList)
-					{
+					chosenGame = uniqueList.Last();
+					//foreach (var chosenGame in uniqueList)
+					//{
 
-						double similarity = 0;
-
+						//double similarity = 0;
+						
 						int minId = Math.Min(chosenGame.Id, candidate.Id);
 						int maxId = Math.Max(chosenGame.Id, candidate.Id);
-						if (!similaritys.ContainsKey((minId, maxId)))
+						if (!similaritys.TryGetValue((minId, maxId), out double similarity))
 						{
 							Dictionary<int, double> chosenTags1 = tags[chosenGame.Id];
 							Dictionary<int, double> candidateTags1 = tags[candidate.Id];
@@ -392,7 +397,7 @@ namespace WebAppTest.Services
 						candidate.MaxSimilarity = Math.Max(similarity, candidate.MaxSimilarity);
 
 
-					}
+					//}
 					//													если очень схоже с хоть одной из-
 					//													-уже выбранных игр то биг штраф
 					candidate.FinalScore = (0.8 * candidate.UserScore) - (0.2 * candidate.MaxSimilarity);
@@ -400,8 +405,6 @@ namespace WebAppTest.Services
 				}
 
 				var winer = sortedCandidates.MaxBy(x => x.FinalScore);
-
-				//добавляем игру
 				uniqueList.Add(winer);
 				sortedCandidates.Remove(winer);
 
@@ -415,38 +418,48 @@ namespace WebAppTest.Services
 				list.Add(candidate.Game);
 			}
 			var sortedList = list.OrderByDescending(x => x.Score).ToList();
+			// 2
 			return sortedList;
 		}
 
 
-		private async Task<RecommendationCandidate> CalculateRecomendationRating(Dictionary<int, double> userTags, double userTagLength, Game game)
+		private RecommendationCandidate CalculateRecomendationRating(
+			Dictionary<int, double> userTags, 
+			double userTagLength,
+			Dictionary<int, Dictionary<int, double>> gameTagsInfo, 
+			int gameId,
+			string gameName,
+			double gameVectorLen,
+			int gameReviewAmount,
+			double gameUserScore
+			)
 		{
-			var gameVector = await _userService.GetGameTagsStrengh(game.SteamAppId);
-			var tagInfo = await _context.GameTags.ToListAsync();
+			//Dictionary<string, Dictionary<string, double>> gameVector = await _userService.GetGameTagsStrengh(game.SteamAppId);
+			//var tagInfo = await _context.GameTags.ToListAsync();
 
-			Dictionary<int, Dictionary<int, double>> gameTagsInfo = tagInfo
-				.GroupBy(x => x.GameId)
-				.ToDictionary(
-				x => x.Key,
-				x => x.ToDictionary(t => t.TagId, t => t.Strength)
-				);
+			//Dictionary<int, Dictionary<int, double>> gameTagsInfo = tagInfo
+			//	.GroupBy(x => x.GameId)
+			//	.ToDictionary(
+			//	x => x.Key,
+			//	x => x.ToDictionary(t => t.TagId, t => t.Strength)
+			//	);
 
 			double finalScore = 0;
-			if (gameTagsInfo.TryGetValue(game.Id, out Dictionary<int, double> gameTags))
+			if (gameTagsInfo.TryGetValue(gameId, out Dictionary<int, double> gameTags))
 			{
-				var gameTagLen = game.VectorLength;
+				//var gameTagLen = game.VectorLength;
 
 				//Dictionary<string, double> gameTags = gameVector[game.SteamAppId.ToString()];
-				double similarity = CosSimilarity1(userTags, gameTags, userTagLength, gameTagLen);
+				double similarity = CosSimilarity1(userTags, gameTags, userTagLength, gameVectorLen);
 				/*
 					Monster Hunter: World: --> 0,5835905493661762 <---
 					ELDEN RING NIGHTREIGN: --> 0,5826818525389187 <--- 
 					Valheim: --> 0,5805596998270341 <---
 				*/
-				int reviewAmount = game.ReviewAmount;
-				double score = game.UserScore;
+				//int reviewAmount = game.ReviewAmount;
+				//double score = game.UserScore;
 
-				double rating = CalculateBayesRaiting(reviewAmount, score);
+				double rating = CalculateBayesRaiting(gameReviewAmount, gameUserScore);
 
 				finalScore = similarity * rating;
 			}
@@ -455,8 +468,8 @@ namespace WebAppTest.Services
 			{
 				//GameId = game.SteamAppId,
 				// меняем seam ID на id БД
-				GameId = game.Id,
-				GameName = game.Name,
+				GameId = gameId,
+				GameName = gameName,
 				Score = finalScore,
 				GameTags = gameTags
 			};
@@ -510,17 +523,30 @@ namespace WebAppTest.Services
 			 */
 
 			List<OwnedGameDto> userGames = await _userService.GetUserGamesIdList(userId);
-			List<int> userIds = userGames.Select(x => x.AppId).ToList();
+			HashSet<int> userIds = userGames.Select(x => x.AppId).ToHashSet();
 
-			var games = await _context.Games.ToListAsync();
+			var games = await _context.Games.Select(x => new { x.Id, x.Name, x.VectorLength, x.SteamAppId, x.UserScore, x.ReviewAmount}).ToListAsync();
+			var tagInfo = await _context.GameTags.ToListAsync();
 
+			Dictionary<int, Dictionary<int, double>> gameTagsInfo = tagInfo
+				.GroupBy(x => x.GameId)
+				.ToDictionary(
+				x => x.Key,
+				x => x.ToDictionary(t => t.TagId, t => t.Strength)
+				);
 			foreach (var game in games)
 			{
 				// если у пользователя нет игры с таким стим id делаем её рекомендацию со своим id
 				if (!userIds.Contains(game.SteamAppId))
 				{
 					// меняем seam ID на id БД
-					RecommendationCandidate recommendation = await CalculateRecomendationRating(userTags, userTagLen, game);
+					RecommendationCandidate recommendation = CalculateRecomendationRating(
+						userTags, 
+						userTagLen, 
+						gameTagsInfo, 
+						game.Id, game.Name,
+						game.VectorLength, game.ReviewAmount,
+						game.UserScore);
 
 					if (recommendation.UserScore > 0)
 					{
@@ -528,7 +554,8 @@ namespace WebAppTest.Services
 					}
 				}
 			}
-
+			// 21 sec
+			// 7 sec
 			return list;
 		}
 

@@ -298,6 +298,7 @@ namespace WebAppTest.Services
 		public async Task<Dictionary<string, Dictionary<string, double>>> GetGameTagsStrengh(int gameId)
 		{
 			bool exists = await _dataGainService.CheckGameExistense(gameId);
+
 			
 			if (!exists)
 			{
