@@ -6,18 +6,14 @@ namespace WebAppTest.Interfaces
 	public interface IRecommendationService
 	{
 		Task<UserVectorResponse> FormUserTagVector(string userId);
-		Task<double> CosSimilarity(
-			Dictionary<string, double> userTags,
-			Dictionary<string, double> gameTags);
 		Task<List<RecommendationDto>> FormRecommendationListAsync(string userId);
 		Task<RecommendationsOnTeg> FormRecomendationsOnTagAsync(string userId, int tagId);
-		//Task<List<RecommendationDto>> ForUniqueRecomendationsAsync(string userId);
 		Task AddGameVector();
-		double CosSimilarity1(
+		double CosSimilarity(
 			Dictionary<int, double> firstGameTags,
 			Dictionary<int, double> secondGameTags,
 			double fristVectorLen, double secondVectorLen
 		);
-		Task<List<RecommendationDto>> ForUniqueRecomendationsAsync1(string userId);
+		Task<List<RecommendationDto>> ForUniqueRecomendationsAsync(string userId);
 	}
 }

@@ -4,11 +4,10 @@ namespace WebAppTest.DTOs
 {
 	public class RecommendationDto
 	{
-		// Id Steam
+		// Id БД
 		public int GameId { get; set; }
 		public string GameName { get; set; }
 		public double Score {  get; set; }
-		//public List<RecommendedGameTag> GameTags { get; set; }
 		public Dictionary<int, double> GameTags { get; set; }
 	}
 }

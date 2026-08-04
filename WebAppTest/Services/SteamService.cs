@@ -32,36 +32,6 @@ namespace WebAppTest.Services
 			_createService = createService;
 		}
 
-		//public async Task<SteamGameDto?> GameDetailsAsync(int appId)
-		//{
-		//	// указали url
-		//	var url =
-		//		$"https://store.steampowered.com/api/appdetails?appids={appId}&l=russian";
-
-		//	// делаем запрос и ждем ответ
-		//	var response = await _httpClient.GetAsync(url);
-
-		//	// проверяем что без ошибок, иначе выкидываем ексептион
-		//	response.EnsureSuccessStatusCode();
-
-		//	// читаем JSON как строку (теперь просто биг строка)
-		//	var json = await response.Content.ReadAsStringAsync();
-
-		//	// не учитываем регистр
-		//	var options = new JsonSerializerOptions
-		//	{
-		//		PropertyNameCaseInsensitive = true
-		//	};
-
-		//	// превращаем JSON в словарь с id в качестве ключа и
-		//	var data = JsonSerializer.Deserialize<
-		//		Dictionary<string, SteamStoreResponse>
-		//	>(json, options);
-
-		//	// берём объект с таким-то id и возвращаем его data
-		//	return data?[appId.ToString()]?.data;
-		//} 
-
 		public async Task<GameResponse?> GetGame(int appId)
 		{
 			Game? game = await _context.Games
@@ -145,14 +115,6 @@ namespace WebAppTest.Services
 
 		public async Task UpdateGame(int appId)
 		{
-			/* СМОТРИМ ДАННЫЕ ПО ID ИГРЫ 
-			 *		
-			 * ЕСЛИ В БД НЕТ ТАКОГО ID -> ДОБАВЛЯЕМ ИГРУ 
-			 * ЕСЛИ В БД ЕСТЬ ИГРА С ТАКИМ ID -> СМОТРИМ, ТЕ ЖЕ ДАННЫЕ ИЛИ НЕТ
-			 * ЕСЛИ ТЕ ЖЕ -> СКИП
-			 * ЕСЛИ ДРУГИЕ -> ОБНОВЛЯЕМ
-			 */
-
 			var exists = await _dataGainService.CheckGameExistense(appId);
 			if (!exists)
 			{
@@ -180,26 +142,3 @@ namespace WebAppTest.Services
 		}
 	}
 }
-
-//public async Task<Dictionary<string, double>> FormRecommendationListAsync(string userId)
-//{
-//	var list = new Dictionary<string, double>();
-//	var userVector = await FormUserTagVector(userId);
-//	Dictionary<string, double> userTags = userVector.TagStrength;
-//	/* получаем все id игр из БД
-//	 * для каждого id берем игру из БД
-//	 */
-//	var idList = await _context.Games.Select(g => g.SteamAppId).ToListAsync();
-//	foreach (var gameId in idList)
-//	{
-//		var game = await _context.Games.FirstOrDefaultAsync(g => g.SteamAppId == gameId);
-//		var gameVector = await _userService.GetGameTagsStrengh(gameId);
-//		Dictionary<string, double> gameTags = gameVector[gameId.ToString()];
-//		double result = await CosSimilarity(userTags, gameTags);
-//		list.Add(game.Name, result);
-//	}
-//	Dictionary<string, double> sortedDict = list
-//	.OrderByDescending(pair => pair.Value)
-//	.ToDictionary(pair => pair.Key, pair => pair.Value);
-//	return sortedDict;
-//}

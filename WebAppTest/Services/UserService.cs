@@ -134,49 +134,6 @@ namespace WebAppTest.Services
 			return games;
 		}
 
-		//public async Task<Dictionary<string, int>> GetUserGameTags(string userId)
-		//{
-		//	List<UserGameDto> games = await GetUserGames(userId);
-		//	var tags = new Dictionary<string, int>();
-		//	foreach (UserGameDto game in games)
-		//	{
-		//		foreach (SpyTagDto tag in game.Tags)
-		//		{
-		//			if (game.Tags != null)
-		//			{
-		//				// вводим счетчик вхождений для каждого тега
-		//				//int count = 0;
-		//				// если тег уже есть
-		//				if (tags.TryGetValue(tag.Name, out int currentValue))
-		//				{
-		//					tags[tag.Name] = currentValue + 1;
-		//				}
-		//				else
-		//				{
-		//					tags.Add(tag.Name, 1);
-		//				}
-		//			}
-		//			else continue;
-		//		}
-		//	}
-
-		//	var sortTags = tags.OrderByDescending(pair => pair.Value).ToDictionary(p => p.Key, p => p.Value);
-
-		//	return sortTags;
-		//}
-
-		//public async Task FormTagPrefList(string userId)
-		//{
-		//	// в словаре будут Тег: значимость 
-		//	var preference = new Dictionary<string, int>();
-		//	Dictionary<string, int> tagAmount = await GetUserGameTags(userId);
-
-		//}
-
-
-		/// ///////////////
-
-
 		public async Task<Dictionary<int, Dictionary<string, double>>> GetUserGameTags(string userId)
 		{               // RPG: {weight: 100, enterence: 3}
 			int counter = 0;
@@ -272,27 +229,6 @@ namespace WebAppTest.Services
 		}
 
 		
-		/// ??????
-		//public async Task<Dictionary<string, Dictionary<string, double>>> FormGameTagVector(int gameId)
-		//{
-		//	/*
-		//	 * DS3 = {
-		//			RPG: 0.82,
-		//			OpenWorld: 0.65,
-		//			Fantasy: 0.54,
-		//			SoulsLike: 0.71,
-		//			StoryRich: 0.33,
-		//			PvP: 0.05
-		//		}
-		//	 */
-		//	var vector = new Dictionary<string, Dictionary<string, double>>();
-		//	bool exists = await _dataGainService.CheckGameExistense(gameId);
-		//	if (!exists)
-		//	{
-		//		await _steamService.ImportGameAsync(gameId);	
-		//	}
-
-		//	return vector;
 		//}
 		//							"123 (ds3)": {rpg:0.5, sols-like:0.7}
 		public async Task<Dictionary<string, Dictionary<string, double>>> GetGameTagsStrengh(int gameId)
@@ -386,50 +322,6 @@ namespace WebAppTest.Services
 			return vector;
 		}
 
-		//public async Task<Dictionary<string, double>> GetGameTagsStrengh2(int gameId)
-		//{
-		//	bool exists = await _dataGainService.CheckGameExistense(gameId);
-
-		//	if (!exists)
-		//	{
-		//		await _steamService.ImportGameAsync(gameId);
-		//	}
-
-		//	GameResponse game = await _steamService.GetGame(gameId);
-
-		//	if (game == null)
-		//	{
-		//		return null;
-		//	}
-		//	var vector = new Dictionary<string, double>();
-
-		//	int counter = 0;
-
-		//	foreach (SpyTagDto tag in game.Tags)
-		//	{
-		//		counter += tag.Weight;
-		//	}
-
-		//	foreach (SpyTagDto tag in game.Tags)
-		//	{
-		//		if (game.Tags != null)
-		//		{
-		//			double tStrengh = (double)tag.Weight / counter;
-		//			//				 "123 (ds3)":			 {rpg:			0.5,...}	
-		//			if (vector.TryGetValue(tag.Name, out double currentValue))
-		//			{
-		//				vector[tag.Name] = currentValue + tStrengh;
-		//			}
-		//			else
-		//			{//		        "123 (ds3)":	  {rpg:		0.5,...}	
-		//				vector.Add(tag.Name, tStrengh);
-		//			}
-		//		}
-		//	}
-
-		//	return vector;
-		//}
-
 
 		public async Task<UserProfile> CreateUserVector(string userId)
 		{
@@ -492,13 +384,3 @@ namespace WebAppTest.Services
 		}
 	}
 }
-
-/* "RPG": {
- * "weight": 0.7, 
- * "enterence": 3
- * },
- * "MOBA" {
- * "weight": 0.3,
- * "enterence": 5
- * }
- */
