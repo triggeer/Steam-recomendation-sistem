@@ -1,105 +1,64 @@
 ﻿@model WebAppTest.Models.Game
 
-<h1>@Model.Name</h1>
-
-<p>
-	@Html.Raw(Model.DetailedDescription)
-	
-</p>
-
-<b>
-	@{
-		foreach (var tag in @Model.GameTags.OrderByDescending(x => x.Strength))
-		{
-			<li>@tag.Tag.Name</li>
+<!DOCTYPE html>
+<html>
+	<head>
+		@{
+			ViewData["Title"] = "Рекомендации";
 		}
-	}
-</b>
+		<link rel="stylesheet" href="~/css/recommendation.css">
+		<meta name="description" content="Рекомендации игр Steam на основе библиотеки пользователя">
+	</head>
 
-@{
-	if (ViewBag.Index > 0)
-	{
-		<button onclick="history.back()"
-				class="move-btn left-btn">
-			Предыдущая игра
-		</button>
-	}	
-}
+	<body>
+		<h1>@Model.Name</h1>
 
+		<p>
+			@Html.Raw(Model.DetailedDescription)
 
-<a asp-action="RecomendationsInARow"
-   asp-controller="Recommendation"
-   asp-route-index="@(ViewBag.Index + 1)">
-	<button class="move-btn right-btn">
-		Следующая игра
-	</button>
-</a>
+		</p>
 
-<a href="https://store.steampowered.com/app/@Model.SteamAppId"
-	target="_blank"
-	class="btn store-btn">
-	<img src="~/images/steam-logo.png" class="logo"/>
-		Перейти в магазин
-</a>
+		<h4>
+			Теги:
+		</h4>
 
+		<h6>
+				<ul>
+					@{
+						foreach (var tag in @Model.GameTags.OrderByDescending(x => x.Strength))
+						{
+							<li title="@($"{tag.Strength * 100:F2}%")">@tag.Tag.Name</li>
+						}
+					}
+				</ul>
+			<small> Вы можете навестись на тег, чтобы увидеть % пользователей посчитавших его релевантным для игры</small>
+		</h6>
 
-<style>
-	.right-btn {
-		right: 10px;
-	}
-
-	.left-btn {
-		left: 10px;
-	}
-
-	.store-btn {
-		bottom: 5%;
-		left: 20%;
-		border: thick;
-		padding: 10px 15px;
-		text-decoration: none;
-		background-color: #628020;
-		color: white;
-		font-size: 24px;
-		border-radius: 0px;
-		transition: 0.3s;
-	}
-
-		.store-btn:hover {
-			border: thick;
-			background-color: #1C2A3C;
-			color: #C5C3C0;
-		}
-
-			.store-btn:hover .logo {
-				opacity: 1;
+		@{
+			if (ViewBag.Index > 0)
+			{
+				<button onclick="history.back()"
+						class="move-btn left-btn">
+					Предыдущая игра
+				</button>
 			}
-
-
-	.move-btn {
-		top: 50%;
-		width: 10%;
-		position: fixed;
-		color: cornflowerblue;
-		border: groove;
-		font-size: 24px;
-		cursor: pointer;
-		transition: 0.3s;
-	}
-
-		.move-btn:hover {
-			color: #628020;
 		}
 
-	.logo {
-		display: inline-block;
-		opacity: 0;
-		width: 50px;
-		height: 50px;
-		vertical-align: middle;
-		margin-right: 10px;
-		transition: 0.3s;
-	}
-</style>
+		<a asp-action="RecomendationsInARow"
+		   asp-controller="Recommendation"
+		   asp-route-index="@(ViewBag.Index + 1)">
+			<button class="move-btn right-btn">
+				Следующая игра
+			</button>
+		</a>
+
+		<a href="https://store.steampowered.com/app/@Model.SteamAppId"
+		   target="_blank"
+		   class="btn store-btn">
+			<img src="~/images/steam-logo.png" class="logo" alt="Логотип Steam" />
+			Перейти в магазин
+		</a>
+	</body>
 
 
+</html>

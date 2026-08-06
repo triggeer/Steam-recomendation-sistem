@@ -382,5 +382,15 @@ namespace WebAppTest.Services
 			await _context.SaveChangesAsync();
 			return;
 		}
+
+		public string TransformLinkToId(string userLink)
+		{
+			//https://steamcommunity.com/profiles/76561198321635392/
+			Uri uri = new Uri(userLink);
+
+			string userId = uri.Segments[^1].Trim('/');
+
+			return userId;
+		}
 	}
 }

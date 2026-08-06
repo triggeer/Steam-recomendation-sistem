@@ -12,7 +12,8 @@ namespace WebAppTest.Interfaces
 		Task<Dictionary<string, double>> GetGameTagsStrengh1(int gameId);
 		Task AddUserTagVector(string userId);
 		Task UpdateUserVector(string userIdq);
-
+		string TransformLinkToId(string userLink);
 
 	}
 }
+
