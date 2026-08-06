@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WebAppTest.Data;
 using WebAppTest.DTOs;
 using WebAppTest.Interfaces;
+using WebAppTest.Models;
 using WebAppTest.Services;
 
 
@@ -40,20 +42,10 @@ namespace WebAppTest.Controllers
 		}
 
 		[HttpGet]
-		public async Task<IActionResult> FormRecomendations(string userId, int gameId)
+		public async Task<IActionResult> FormRecommendationList(string userLink)
 		{
-			var userVector = await _recommendationService.FormUserTagVector(userId);
-			var gameVector = await _userService.GetGameTagsStrengh(gameId);
-			Dictionary<string, double> userTags = userVector.TagStrength;
-			Dictionary<string, double> gameTags = gameVector[gameId.ToString()];
-			double result = await _recommendationService.CosSimilarity(userTags, gameTags);
-			return View(result);
-		}
-
-		[HttpGet]
-		public async Task<IActionResult> FormRecommendationList(string userId)
-		{
-			var cosSimList = await _recommendationService.FormRecommendationListAsync(userId);
+			string userId = _userService.TransformLinkToId(userLink);
+			var cosSimList = await _recommendationService.ForUniqueRecomendationsAsync(userId);
 			return View(cosSimList);
 		}
 
@@ -62,6 +54,51 @@ namespace WebAppTest.Controllers
 		{
 			RecommendationsOnTeg list = await _recommendationService.FormRecomendationsOnTagAsync(userId, tagId);	
 			return View(list);
+		}
+
+		public async Task<IActionResult> ShowRecomendationsInARow(string userLink)
+		{
+			string userId = _userService.TransformLinkToId(userLink);
+			//List<RecommendationDto> recommendations = await _recommendationService.FormRecommendationListAsync(userId);
+			List<RecommendationDto> recommendations = await _recommendationService.ForUniqueRecomendationsAsync(userId);
+
+			HttpContext.Session.SetString("Recommendations", JsonSerializer.Serialize(recommendations));
+
+			return RedirectToAction("RecomendationsInARow", new { index = 0 });
+		}
+
+		[HttpGet("Recomendation/RecomendationsInARow/{index}")]
+		public async Task<IActionResult> RecomendationsInARow(int index)
+		{
+			string json = HttpContext.Session.GetString("Recommendations");
+
+			List<RecommendationDto> recommendations = JsonSerializer.Deserialize<List<RecommendationDto>>(json);
+
+			if (index >= recommendations.Count)
+				return RedirectToAction("Index");
+
+			ViewBag.Index = index;
+
+			RecommendationDto recommendation= recommendations[index];
+
+			Game? game = await _context.Games
+				.AsNoTracking()
+				.Include(gt => gt.GameTags)
+					.ThenInclude(t  => t.Tag)
+				.FirstOrDefaultAsync(x => x.Id == recommendation.GameId);
+
+			if (game == null)
+				return NotFound();
+
+			return View(game);
+
+		}
+
+
+		[HttpGet]
+		public async Task UpdateGameVectors()
+		{
+			await _recommendationService.AddGameVector();
 		}
 	}
 }

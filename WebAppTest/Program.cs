@@ -31,6 +31,16 @@ builder.Services.AddHttpClient<IUserService, UserService>();
 builder.Services.AddHttpClient<IRecommendationService, RecommendationService>();
 //builder.Services.AddDbContext<AppDbContext>();
 builder.Services.AddDbContext<AppDbContext>(options =>	options.UseNpgsql(dataSource));
+
+builder.Services.AddDistributedMemoryCache();
+
+builder.Services.AddSession(options =>
+{
+	options.IdleTimeout = TimeSpan.FromMinutes(30);
+	options.Cookie.HttpOnly = true;
+	options.Cookie.IsEssential = true;
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -43,6 +53,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+app.UseSession();
 
 app.UseAuthorization();
 

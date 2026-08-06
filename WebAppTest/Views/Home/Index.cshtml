@@ -1,8 +1,24 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Recommendations for Steam";
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h1 class="display-4">Введите ссылку на Steam профиль, и мы сформируем вам список рекомендаций!</h1>
+    
+    <form asp-controller="Recommendation"
+          asp-action="ShowRecomendationsInARow">
+        <label for="userLink">Ссылка на профиль Steam:</label>
+
+        <input type="text"
+               placeholder="https://steamcommunity.com/profiles/12345678912345678/"
+               name="userLink"
+               id="userLink"
+               size="56"/>
+        
+        <button type="submit"
+                class="btn btn-primary">
+            Сформировать
+        </button>
+    </form>
+    
 </div>

@@ -82,3 +82,30 @@
         Search
     </button>
 </form>
+
+
+<h1>Подряд</h1>
+<form asp-action="ShowRecomendationsInARow"
+      asp-controller="Recommendation">
+  <label for="userId">Id</label>
+
+  <input type="int"
+      id="userId"
+      name="userId"
+      class="form-control" />
+
+    <button type="submit"
+            class="btn btn-primary">
+        Search
+    </button>
+  </form>
+
+
+<h1>Обновить вектора</h1>
+<form asp-action="UpdateGameVectors"
+      asp-controller="Recommendation"
+      method="gget">
+  <button type="submit"
+      class="btn btn-primary">
+  </button>
+  </form>

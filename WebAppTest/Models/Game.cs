@@ -17,8 +17,9 @@ namespace WebAppTest.Models
 		public int ReviewAmount { get; private set; }
 		public long Owners {  get; private set; }
 		public int? InitialPrice { get; private set; } = 0;
+		public double VectorLength { get; private set; }
 		private Game(){ }
-		public Game(int steamAppId, string name, string detailed_description, double userScore, int reviewAmount, long owners, int? initPrice)
+		public Game(int steamAppId, string name, string detailed_description, double userScore, int reviewAmount, long owners, int? initPrice, double vectorLength)
 		{
 			SteamAppId = steamAppId;
 			Name = name;
@@ -28,15 +29,18 @@ namespace WebAppTest.Models
 			UserScore = userScore;
 			ReviewAmount = reviewAmount;
 			Owners = owners;
-			if (initPrice == null)
-			{
-				InitialPrice = 0;
-			}
-				
+			InitialPrice = initPrice ?? 0;
+			VectorLength = vectorLength;
 		}
 		public void UpdateInitialPrice(int? newInitPrice)
 		{
-			InitialPrice = newInitPrice;
+			InitialPrice = newInitPrice ?? 0;
 		}
+
+		public void UpdateVectorLength(double? newVectorLength)
+		{
+			VectorLength = newVectorLength ?? 0;
+		}
+		
 	}
 }

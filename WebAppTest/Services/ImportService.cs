@@ -36,8 +36,8 @@ namespace WebAppTest.Services
 			 * ДЛЯ КАЖДОГО ID ИЗ СПИСКА ПОЛУЧАЕМ ИНФУ ОБ ИГРЕ 
 			 */
 			//string url = "https://steamspy.com/api.php?request=top100in2weeks";
-			string url = "https://steamspy.com/api.php?request=all&page=0";
-
+			//string url = "https://steamspy.com/api.php?request=all&page=0";
+			string url = "https://steamspy.com/api.php?request=all&page=1";
 			HttpResponseMessage response = await _httpClient.GetAsync(url);
 			
 			response.EnsureSuccessStatusCode();

@@ -38,6 +38,10 @@ namespace WebAppTest.Controllers
 		{
 			// ждем ответа от GetGame и возвращаем вид (открываем cshtml) и передаем туда model = game
 			var game = await _steamService.GetGame(appId);
+			if (game == null)
+			{
+				return View("NoData");
+			}
 			return View(game);
 		}
 
@@ -53,7 +57,6 @@ namespace WebAppTest.Controllers
 			await _steamService.ImportGameAsync(appId);
 			//return View();
 			return RedirectToAction("GameDetails", new {appId});
-
 		}
 
 		[HttpGet]
@@ -109,6 +112,10 @@ namespace WebAppTest.Controllers
 		public async Task<IActionResult> FormGameTagsVector(int gameId)
 		{
 			var vector = await _userService.GetGameTagsStrengh(gameId);
+			if (vector == null)
+			{
+				return View("NoData");
+			}
 			return View(vector);
 		}
 	}
