@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Xml.Linq;
 using Microsoft.EntityFrameworkCore;
 using WebAppTest.Data;
 using WebAppTest.DTOs;
@@ -367,7 +368,7 @@ namespace WebAppTest.Services
 					PvP: 0.05
 				}
 		 	 */
-			var userProfile = await CreateUserVector(userId);
+			UserProfile userProfile = await CreateUserVector(userId);
 
 			_context.UserProfiles.Add(userProfile);
 			await _context.SaveChangesAsync();
@@ -383,12 +384,19 @@ namespace WebAppTest.Services
 			return;
 		}
 
-		public string TransformLinkToId(string userLink)
+		public async Task<string> TransformLinkToId(string userLink)
 		{
-			//https://steamcommunity.com/profiles/76561198321635392/
+			string steamLink = $"{userLink}?xml=1";
+
+			Stream steamResponse = await _httpClient.GetStreamAsync(steamLink);
+			
+			XDocument xdoc = XDocument.Load(steamResponse);
+
+			XElement? root = xdoc.Root;
+
 			Uri uri = new Uri(userLink);
 
-			string userId = uri.Segments[^1].Trim('/');
+			string userId = root.Element("steamID64").Value;
 
 			return userId;
 		}

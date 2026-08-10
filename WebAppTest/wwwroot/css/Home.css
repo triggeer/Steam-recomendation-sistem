@@ -1,0 +1,20 @@
+﻿.table {
+	bottom: 10%;
+	border: thick;
+/*	background-color: grey;*/
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	margin-top: auto;
+	/*	position: absolute;*/
+}
+
+.leftTable {
+	left: 20%;
+}
+
+.middleTable {
+}
+
+.rightTable {
+	right: 20%;
+}

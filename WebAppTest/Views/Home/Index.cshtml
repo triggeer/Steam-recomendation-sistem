@@ -1,24 +1,77 @@
-﻿@{
-    ViewData["Title"] = "Recommendations for Steam";
-}
+﻿<head>
+    @{
+        ViewData["Title"] = "Recommendations for Steam";
+    }
+    <link href="~/css/Home.css" rel="stylesheet" />
+    <meta name="description" content="Рекомендации игр Steam на основе библиотеки пользователя">
+</head>
 
-<div class="text-center">
-    <h1 class="display-4">Введите ссылку на Steam профиль, и мы сформируем вам список рекомендаций!</h1>
-    
-    <form asp-controller="Recommendation"
-          asp-action="ShowRecomendationsInARow">
-        <label for="userLink">Ссылка на профиль Steam:</label>
+<body>
+    <div class="text-center">
+        <h1 class="display-4">Введите ссылку на Steam профиль, <br />и мы сформируем вам список рекомендаций!</h1>
 
-        <input type="text"
-               placeholder="https://steamcommunity.com/profiles/12345678912345678/"
-               name="userLink"
-               id="userLink"
-               size="56"/>
-        
-        <button type="submit"
-                class="btn btn-primary">
-            Сформировать
-        </button>
-    </form>
+        <form asp-controller="Recommendation"
+              asp-action="ShowRecomendationsInARow">
+            <label for="userLink">Ссылка на профиль Steam:</label>
+
+            <input type="text"
+                   placeholder="https://steamcommunity.com/profiles/12345678912345678/"
+                   name="userLink"
+                   id="userLink"
+                   size="56" />
+
+            <button type="submit"
+                    class="btn btn-primary">
+                Сформировать
+            </button>
+        </form>
+
+    </div>
+
+    <div class="table">
+        <div class="leftTable">
+            <h5>
+                Перед формированием рекомендаций убедитесь что:
+            </h5>
+            <p>
+                <ul>
+                    <li>Профиль Steam не скрыт</li>
+                    <li>Вы скопировали ссылку на профиль правильно</li>
+                </ul>
+            </p>
+        </div>
+
+        <div class="middleTable">
+            <h5>
+                Как формируются рекомендации?
+            </h5>
+            <p>
+                <ol>
+                    <li>Для каждой игры из вашей библиотеки смотрим пользовательские теги</li>
+                    <li>Через SteamSpy берутся данные о числе голосов за каждый тег</li>
+                    <li>На основе этих данных вычисляем релевантность тегов</li>
+                    <li>Далее формируем список тегов, учитывая ваши игры и проведённое в них время</li>
+                    <li>В конце выдаём для каждой игры из БД оценку, на основе совпадения тегов и популярности игры</li>
+                    <li>Получаем список игр, основанные на ваших играх, времени в них и "уровня одобрения" игры</li>
+                </ol>
+            </p>
+        </div>
+
+        <div class="rightTable">
+            <h5>
+                Почему мне не рекомендуют некоторые игры?
+            </h5>
+            <p>
+                <ul>
+                    <li>Для каждой игры из вашей библиотеки смотрим пользовательские теги</li>
+                    <li>Через SteamSpy берутся данные о числе голосов за каждый тег</li>
+                    <li>На основе этих данных вычисляем релевантность тегов</li>
+                    <li>Далее формируем список тегов, учитывая ваши игры и проведённое в них время</li>
+                    <li>В конце выдаём для каждой игры из БД оценку, на основе совпадения тегов и популярности игры</li>
+                    <li>Получаем список игр, основанные на ваших играх, времени в них и "уровня одобрения" игры</li>
+                </ul>
+            </p>
+        </div>
+    </div>
     
-</div>
+</body>

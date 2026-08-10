@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WebAppTest.Data;
@@ -12,9 +13,11 @@ using WebAppTest.Data;
 namespace WebAppTest.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260810165850_RecommendationLists")]
+    partial class RecommendationLists
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -181,15 +184,15 @@ namespace WebAppTest.Migrations
 
             modelBuilder.Entity("WebAppTest.Models.UserList", b =>
                 {
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("ListId")
                         .HasColumnType("integer");
 
                     b.HasKey("UserId", "ListId");
 
-                    b.ToTable("UserLists");
+                    b.ToTable("UserUserLists");
                 });
 
             modelBuilder.Entity("WebAppTest.Models.UserProfile", b =>

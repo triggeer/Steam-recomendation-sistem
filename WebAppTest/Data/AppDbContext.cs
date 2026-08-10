@@ -35,6 +35,12 @@ namespace WebAppTest.Data
 			modelBuilder.Entity<Tag>().HasIndex(t => t.Name).IsUnique();
 			modelBuilder.Entity<UserProfile>().HasIndex(i => i.Id).IsUnique();
 			modelBuilder.Entity<UserProfile>().Property(t => t.TagStrength).HasColumnType("jsonb");
+			modelBuilder.Entity<RecList>().HasIndex(i => i.Id).IsUnique();
+			modelBuilder.Entity<ListGame>().HasKey(lg => new { lg.ListId, lg.GameId });
+			modelBuilder.Entity<ListGame>().HasIndex(lp => new { lp.ListId, lp.GamePosition }).IsUnique();
+			modelBuilder.Entity<UserList>().HasKey(ul => new { ul.UserId, ul.ListId});
+
+
 
 			base.OnModelCreating(modelBuilder);
 		}
@@ -45,5 +51,9 @@ namespace WebAppTest.Data
 		public DbSet<Genre> Genres { get; set; }
 		public DbSet<GameGenre> GameGenres { get; set; }
 		public DbSet<UserProfile> UserProfiles { get; set; }
+		public DbSet<RecList> RecLists { get; set; }
+		public DbSet<ListGame> ListGames { get; set; }
+		public DbSet<UserList> UserLists { get; set; }
+
 	}
 }

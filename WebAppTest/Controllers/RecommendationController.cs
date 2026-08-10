@@ -44,7 +44,7 @@ namespace WebAppTest.Controllers
 		[HttpGet]
 		public async Task<IActionResult> FormRecommendationList(string userLink)
 		{
-			string userId = _userService.TransformLinkToId(userLink);
+			string userId = await _userService.TransformLinkToId(userLink);
 			var cosSimList = await _recommendationService.ForUniqueRecomendationsAsync(userId);
 			return View(cosSimList);
 		}
@@ -58,8 +58,8 @@ namespace WebAppTest.Controllers
 
 		public async Task<IActionResult> ShowRecomendationsInARow(string userLink)
 		{
-			string userId = _userService.TransformLinkToId(userLink);
-			//List<RecommendationDto> recommendations = await _recommendationService.FormRecommendationListAsync(userId);
+			string userId = await _userService.TransformLinkToId(userLink);
+
 			List<RecommendationDto> recommendations = await _recommendationService.ForUniqueRecomendationsAsync(userId);
 
 			HttpContext.Session.SetString("Recommendations", JsonSerializer.Serialize(recommendations));
