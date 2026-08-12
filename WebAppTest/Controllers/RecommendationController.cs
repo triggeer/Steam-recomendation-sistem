@@ -100,5 +100,40 @@ namespace WebAppTest.Controllers
 		{
 			await _recommendationService.AddGameVector();
 		}
+
+
+		[HttpGet]
+		public async Task<IActionResult> ShowPreviousLists(string userLink)
+		{
+			string userId = await _userService.TransformLinkToId(userLink);
+
+			Dictionary<int, List<int>> prevLists = await _recommendationService.CollectFormedList(userId);
+
+			HttpContext.Session.SetString("Recommendations", JsonSerializer.Serialize(prevLists));
+
+			//return RedirectToAction("ChoosePrevList", prevLists);
+			return View(prevLists);
+
+		}
+
+		public async Task<IActionResult> ShowChosenList(int listId, int index = 0)
+		{
+			string json = HttpContext.Session.GetString("Recommendations");
+
+			Dictionary<int, List<int>> lists = JsonSerializer.Deserialize<Dictionary<int, List<int>>>(json);
+
+			var chosenList = lists[listId];
+
+			var chosenId = chosenList[index];
+
+			var game = await _context.Games
+				.FirstOrDefaultAsync(x => x.Id == chosenId);
+
+			ViewBag.ListId = listId;
+			ViewBag.Index = index;
+
+			return View(game);
+		}
+
 	}
 }

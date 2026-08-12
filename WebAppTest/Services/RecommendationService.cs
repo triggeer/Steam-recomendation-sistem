@@ -168,6 +168,7 @@ namespace WebAppTest.Services
 
 		public async Task<List<RecommendationDto>> ForUniqueRecomendationsAsync(string userId)
 		{
+			var list11 = await CollectFormedList(userId);
 			var banList = FormIdBanList(userId);
 			var uniqueList = new List<RecommendationCandidate>();
 			List<RecommendationCandidate> recGames = await FormUnsortedRecommendationList(userId);
@@ -424,6 +425,40 @@ namespace WebAppTest.Services
 				return hashIds;
 			}
 			else return emptyList;
+		}
+
+		public async Task<Dictionary<int, List<int>>> CollectFormedList(string userId)
+		{
+			var listOfLists = new Dictionary<int, List<int>>();	
+
+			//var previousList = new List<int>();
+
+			List<int> userListsIds = await _context.UserLists
+				.Where(u => u.UserId == userId)
+				.Select(l => l.ListId)
+				.ToListAsync();
+
+			foreach (var listId in userListsIds)
+			{
+				List<int> gamesIds = await _context.ListGames
+					.Where(x => x.ListId == listId)
+					.OrderBy(g => g.GamePosition)
+					.Select(i => i.GameId)
+					.ToListAsync();
+
+				listOfLists.Add(listId, gamesIds);
+				//Dictionary<int, Game> gameData = await _context.Games
+				//	.Where(g => gameDict.Contains(g.Id))
+				//	.ToDictionary(g => g.Id, g => );
+
+				
+				//foreach (var gameId in gameDict)
+				//{
+				//	previousList.Add(gameData)
+				//}
+			}
+
+			return listOfLists;
 		}
 	}
 }

@@ -1,0 +1,14 @@
+﻿@model Dictionary<int, List<int>>
+
+@foreach (var list in Model)
+{
+	<h1>@list.Key</h1>
+
+	<a asp-controller="Recommendation"
+	   asp-action="ShowChosenList"
+	   asp-route-listId="@($"{list.Key}")">
+	Перейти
+	</a>
+}
+
+

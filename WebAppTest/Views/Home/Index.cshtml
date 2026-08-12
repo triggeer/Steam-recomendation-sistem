@@ -10,8 +10,7 @@
     <div class="text-center">
         <h1 class="display-4">Введите ссылку на Steam профиль, <br />и мы сформируем вам список рекомендаций!</h1>
 
-        <form asp-controller="Recommendation"
-              asp-action="ShowRecomendationsInARow">
+        <form>
             <label for="userLink">Ссылка на профиль Steam:</label>
 
             <input type="text"
@@ -21,8 +20,17 @@
                    size="56" />
 
             <button type="submit"
+                    asp-controller="Recommendation"
+                    asp-action="ShowRecomendationsInARow"
                     class="btn btn-primary">
                 Сформировать
+            </button>
+
+            <button type="submit"
+                    asp-controller="Recommendation"
+                    asp-action="ShowPreviousLists"
+                    class="btn btn-primary">
+                Предыдущие списки
             </button>
         </form>
 
