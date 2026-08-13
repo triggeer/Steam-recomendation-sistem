@@ -56,6 +56,14 @@ namespace WebAppTest.Controllers
 			return View(list);
 		}
 
+
+		[HttpGet]
+		public async Task UpdateGameVectors()
+		{
+			await _recommendationService.AddGameVector();
+		}
+
+
 		public async Task<IActionResult> ShowRecomendationsInARow(string userLink)
 		{
 			string userId = await _userService.TransformLinkToId(userLink);
@@ -67,6 +75,8 @@ namespace WebAppTest.Controllers
 			return RedirectToAction("RecomendationsInARow", new { index = 0 });
 		}
 
+		
+
 		[HttpGet("Recomendation/RecomendationsInARow/{index}")]
 		public async Task<IActionResult> RecomendationsInARow(int index)
 		{
@@ -76,8 +86,6 @@ namespace WebAppTest.Controllers
 
 			if (index >= recommendations.Count)
 				return RedirectToAction("Index");
-
-			ViewBag.Index = index;
 
 			RecommendationDto recommendation= recommendations[index];
 
@@ -90,17 +98,16 @@ namespace WebAppTest.Controllers
 			if (game == null)
 				return NotFound();
 
-			return View(game);
+			var model = new GameViewModel
+			{
+				Game = game,
+				Index = index,
+				ListSize = recommendations.Count(),
+				ListId = null
+			};
 
+			return View("Game", model);
 		}
-
-
-		[HttpGet]
-		public async Task UpdateGameVectors()
-		{
-			await _recommendationService.AddGameVector();
-		}
-
 
 		[HttpGet]
 		public async Task<IActionResult> ShowPreviousLists(string userLink)
@@ -111,11 +118,11 @@ namespace WebAppTest.Controllers
 
 			HttpContext.Session.SetString("Recommendations", JsonSerializer.Serialize(prevLists));
 
-			//return RedirectToAction("ChoosePrevList", prevLists);
 			return View(prevLists);
 
 		}
 
+		[HttpGet]
 		public async Task<IActionResult> ShowChosenList(int listId, int index = 0)
 		{
 			string json = HttpContext.Session.GetString("Recommendations");
@@ -127,12 +134,19 @@ namespace WebAppTest.Controllers
 			var chosenId = chosenList[index];
 
 			var game = await _context.Games
+				.Include(gt => gt.GameTags)
+						.ThenInclude(t => t.Tag)
 				.FirstOrDefaultAsync(x => x.Id == chosenId);
 
-			ViewBag.ListId = listId;
-			ViewBag.Index = index;
+			var model = new GameViewModel
+			{
+				Game = game,
+				Index = index,
+				ListSize = chosenList.Count,
+				ListId = listId
+			};
 
-			return View(game);
+			return View("Game", model);
 		}
 
 	}

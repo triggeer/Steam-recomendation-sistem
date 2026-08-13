@@ -1,0 +1,97 @@
+﻿@model WebAppTest.DTOs.GameViewModel
+
+<!DOCTYPE html>
+<html>
+<head>
+	@{
+		ViewData["Title"] = "Рекомендации";
+	}
+	<link rel="stylesheet" href="~/css/recommendation.css">
+	<meta name="description" content="Рекомендации игр Steam на основе библиотеки пользователя">
+</head>
+
+<body>
+	<h1>@Model.Game.Name</h1>
+
+	<p>
+		@Html.Raw(Model.Game.DetailedDescription)
+
+	</p>
+
+	<h4>
+		Теги:
+	</h4>
+
+	<h6>
+		<ul>
+			@{
+				foreach (var tag in @Model.Game.GameTags.OrderByDescending(x => x.Strength))
+				{
+					<li title="@($"{tag.Strength * 100:F2}%")">@tag.Tag.Name</li>
+				}
+			}
+		</ul>
+		<small> Вы можете навестись на тег, чтобы увидеть % пользователей посчитавших его релевантным для игры</small>
+	</h6>
+
+	
+	@if (Model.Index > 0)
+	{
+		if (Model.ListId != null)
+		{
+			<a asp-action="ShowChosenList"
+				asp-controller="Recommendation"
+				asp-route-listId="@Model.ListId"
+				asp-route-index="@(Model.Index - 1)">
+				<button class="move-btn left-btn">
+					Предыдущая игра
+				</button>
+			</a>
+		}
+		else
+		{
+			<a asp-action="RecomendationsInARow"
+			   asp-controller="Recommendation"
+			   asp-route-index="@(Model.Index - 1)">
+				<button class="move-btn left-btn">
+					Предыдущая игра
+				</button>
+			</a>
+		}
+	}
+	
+	@if (Model.Index + 1 < Model.ListSize)
+	{
+		if (Model.ListId != null)
+		{
+			<a asp-action="ShowChosenList"
+			   asp-controller="Recommendation"
+			   asp-route-listId="@Model.ListId"
+			   asp-route-index="@(Model.Index + 1)">
+				<button class="move-btn right-btn">
+					Следующая игра
+				</button>
+			</a>
+		}
+		else
+		{
+			<a asp-action="RecomendationsInARow"
+				asp-controller="Recommendation"
+			   asp-route-index="@(Model.Index + 1)">
+				<button class="move-btn right-btn">
+					Следующая игра
+				</button>
+			</a>
+		}
+	}
+
+	<a href="https://store.steampowered.com/app/@Model.Game.SteamAppId"
+	   target="_blank"
+	   class="btn store-btn">
+		<img src="~/images/steam-logo.png" class="logo" alt="Логотип Steam" />
+		Перейти в магазин
+	</a>
+</body>
+
+
+</html>
