@@ -44,8 +44,13 @@ namespace WebAppTest.Services
 			return vector;
 		}
 
-		public async Task<List<OwnedGameDto>> GetUserGamesIdList(string userId)
+		public async Task<List<OwnedGameDto>> GetUserGamesFromSteamAsync(string userId)
 		{
+			//List<int> userGameData = _context.UserGames
+			//	.Where(u => u.userId == userId)
+			//	.Select(g => g.gameId)
+			//	.ToList();
+
 			var apiKey = _configuration.GetValue<string>("Steam:ApiKey");
 			var url = $"https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={apiKey}&steamid={userId}&format=json";
 
@@ -66,7 +71,7 @@ namespace WebAppTest.Services
 		public async Task<List<UserGameDto>> GetUserGames(string userId)
 		{
 			// получили спсиок (id STEAM, часы)
-			List<OwnedGameDto> list = await GetUserGamesIdList(userId);
+			List<OwnedGameDto> list = await GetActualUserGames(userId);
 
 			// получаем только список id (все игры(id) пользователя)
 			List<int> idList = list.Select(x => x.AppId).ToList();
@@ -85,7 +90,7 @@ namespace WebAppTest.Services
 			}
 
 			// обновляем данные в случае если нашлись отсутствующие в БД id
-			if (missingIds != null)
+			if (missingIds.Any())
 			{
 				dbGames = await _steamService.GetGameList(idList);
 			}
@@ -110,11 +115,12 @@ namespace WebAppTest.Services
 
 						*/
 				//Game? game = gameDictionary[gameObj.AppId];
+				//var game = gameDictionary[gameObj.AppId]; ????????????????????????????????????????????
 				if (!gameDictionary.TryGetValue(gameObj.AppId, out var game))
 				{
 					// GAME GAME = CREATE GAME
 					// IMPORT GAME
-					await _steamService.ImportGameAsync(gameObj.AppId); 
+					await _steamService.ImportGameAsync(gameObj.AppId);
 					continue;
 				}
 
@@ -135,6 +141,82 @@ namespace WebAppTest.Services
 			return games;
 		}
 
+		
+
+		public async Task<List<OwnedGameDto>?> GetUserOwnedGamesAsync(string userId)
+		{
+			List<OwnedGameDto> userGameIds = await _context.UserGames
+				.Where (u => u.userId == userId)
+				.Select(g => new OwnedGameDto 
+				{ 
+					AppId = g.gameId,
+					PlayTime = g.playTime
+				})
+				.ToListAsync();
+
+			return userGameIds;
+		}
+
+		public async Task<List<OwnedGameDto>?> GetActualUserGames(string userId)
+		{
+			var profile = await _context.UserProfiles
+				.FirstOrDefaultAsync(x => x.Id == userId);
+
+			DateTimeOffset weekAgo = DateTimeOffset.UtcNow.AddDays(-7);
+
+			if (profile == null || profile.UpdatedAt <= weekAgo)
+			{
+				var steamGames = await GetUserGamesFromSteamAsync(userId);
+
+				await UpdateUserGames(userId, steamGames);
+
+				if (profile != null)
+				{
+					profile.UpdatedAt = DateTime.UtcNow;
+				}
+
+				await _context.SaveChangesAsync();
+			}
+
+			return await GetUserOwnedGamesAsync(userId);
+		}
+
+		public async Task UpdateUserGames(string userId, List<OwnedGameDto> actualGames)
+		{
+			var dbUserGames = await _context.UserGames
+				.Where(u => u.userId == userId)
+				.ToDictionaryAsync(x => x.gameId, x => x);
+
+			foreach (var actualGame in actualGames)
+			{
+				if (dbUserGames.TryGetValue(actualGame.AppId, out UserGame existingGame))
+				{
+					if (existingGame.playTime != actualGame.PlayTime)
+					{
+						existingGame.playTime = actualGame.PlayTime;
+					}
+				}
+				else
+				{
+					_context.UserGames.Add(new UserGame
+					{
+						userId = userId,
+						gameId = actualGame.AppId,
+						playTime = actualGame.PlayTime
+					});
+				}
+			}
+			var actualIds = actualGames
+				.Select(x => x.AppId)
+				.ToHashSet();
+
+			var gamesToRemove = dbUserGames.Values
+				.Where(x => !actualIds.Contains(x.gameId))
+				.ToList();
+				
+			_context.UserGames.RemoveRange(gamesToRemove);
+		}
+
 		public async Task<Dictionary<int, Dictionary<string, double>>> GetUserGameTags(string userId)
 		{               // RPG: {weight: 100, enterence: 3}
 			int counter = 0;
@@ -153,6 +235,7 @@ namespace WebAppTest.Services
 				{
 					weightConunt += tag.Weight;
 				}
+
 				double playtime = (double)game.PlayTime / 60;
 				playtime = double.Min(playtime, 100);
 				playtime = (playtime / 20);

@@ -96,17 +96,6 @@ namespace WebAppTest.Controllers
 			return View();
 		}
 
-		//public async Task<IActionResult> GetUserGameTagsValue(string userId)
-		//{
-		//	var tags = await _userService.GetUserGameTags(userId);
-		//	return View(tags);
-		//}
-
-		//public async Task<IActionResult> GetUserGameTagsValue(string userId)
-		//{
-		//	var tags = await _userService.FormUserTagVector(userId);
-		//	return View(tags);
-		//}
 
 		[HttpGet]
 		public async Task<IActionResult> FormGameTagsVector(int gameId)

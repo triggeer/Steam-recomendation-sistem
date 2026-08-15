@@ -168,7 +168,7 @@ namespace WebAppTest.Services
 
 		public async Task<List<RecommendationDto>> ForUniqueRecomendationsAsync(string userId)
 		{
-			var list11 = await CollectFormedList(userId);
+			//var list11 = await CollectFormedList(userId);
 			var banList = FormIdBanList(userId);
 			var uniqueList = new List<RecommendationCandidate>();
 			List<RecommendationCandidate> recGames = await FormUnsortedRecommendationList(userId);
@@ -322,6 +322,7 @@ namespace WebAppTest.Services
 			return rating;
 		}
 
+		
 		private async Task<List<RecommendationCandidate>> FormUnsortedRecommendationList(string userId)
 		{
 			var list = new List<RecommendationCandidate>();
@@ -332,8 +333,10 @@ namespace WebAppTest.Services
 			
 			double userTagLen = userProfile.Length;
 
-			List<OwnedGameDto> userGames = await _userService.GetUserGamesIdList(userId);
+			///
+			List<OwnedGameDto> userGames = await _userService.GetActualUserGames(userId);
 			HashSet<int> userIds = userGames.Select(x => x.AppId).ToHashSet();
+			///
 
 			var games = await _context.Games.Select(x => new { 
 				x.Id, 
@@ -377,6 +380,11 @@ namespace WebAppTest.Services
 			return list;
 		}
 
+		/// <summary>
+		/// Записывает данные сформированного списка рекомендаций в БД
+		/// </summary>
+		/// <param name="recommendedList">Сформированный список рекомендаций</param>
+		/// <returns>Записанные данные о сформированном списке в БД</returns>
 		public async Task AddUserList(List<RecommendationDto> recommendedList, string userId)
 		{
 			DateTime updatedAt = DateTime.Now;
@@ -405,6 +413,10 @@ namespace WebAppTest.Services
 
 		}
 
+		/// <summary>
+		/// Формирует HashSet с id игр, которые уже были в сформированных списках рекомендаций
+		/// </summary>
+		/// <returns>хеш-таблица для быстрого поиска id, которые будем избегать</returns>
 		protected HashSet<int> FormIdBanList(string userId)
 		{
 			var emptyList = new HashSet<int>();
@@ -427,11 +439,15 @@ namespace WebAppTest.Services
 			else return emptyList;
 		}
 
+		/// <summary>
+		/// Вытягивает из БД все уже сформированные списки пользователя 
+		/// </summary>
+		/// <returns>
+		/// Словарь с id пользователя в качестве ключа 
+		/// и списка id всех сформированных списков рекомендаций как значение</returns>
 		public async Task<Dictionary<int, List<int>>> CollectFormedList(string userId)
 		{
 			var listOfLists = new Dictionary<int, List<int>>();	
-
-			//var previousList = new List<int>();
 
 			List<int> userListsIds = await _context.UserLists
 				.Where(u => u.UserId == userId)
@@ -447,15 +463,6 @@ namespace WebAppTest.Services
 					.ToListAsync();
 
 				listOfLists.Add(listId, gamesIds);
-				//Dictionary<int, Game> gameData = await _context.Games
-				//	.Where(g => gameDict.Contains(g.Id))
-				//	.ToDictionary(g => g.Id, g => );
-
-				
-				//foreach (var gameId in gameDict)
-				//{
-				//	previousList.Add(gameData)
-				//}
 			}
 
 			return listOfLists;

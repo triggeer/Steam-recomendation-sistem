@@ -39,6 +39,7 @@ namespace WebAppTest.Data
 			modelBuilder.Entity<ListGame>().HasKey(lg => new { lg.ListId, lg.GameId });
 			modelBuilder.Entity<ListGame>().HasIndex(lp => new { lp.ListId, lp.GamePosition }).IsUnique();
 			modelBuilder.Entity<UserList>().HasKey(ul => new { ul.UserId, ul.ListId});
+			modelBuilder.Entity<UserGame>().HasKey(ug => new { ug.userId, ug.gameId });
 
 
 
@@ -54,6 +55,7 @@ namespace WebAppTest.Data
 		public DbSet<RecList> RecLists { get; set; }
 		public DbSet<ListGame> ListGames { get; set; }
 		public DbSet<UserList> UserLists { get; set; }
+		public DbSet<UserGame> UserGames { get; set; }
 
 	}
 }
