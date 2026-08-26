@@ -1,14 +1,30 @@
 ﻿@model Dictionary<int, List<int>>
 
-@foreach (var list in Model)
-{
-	<h1>@list.Key</h1>
+<head>
+	@{
+		ViewData["Title"] = "Предыдущие списки";
+	}
+	<link href="~/css/site.css" rel="stylesheet" />
+</head>
 
-	<a asp-controller="Recommendation"
-	   asp-action="ShowChosenList"
-	   asp-route-listId="@($"{list.Key}")">
-	Перейти
-	</a>
-}
+<body>
+	@foreach (var list in Model)
+	{
+		<h1>@list.Key</h1>
 
+		<a asp-controller="Recommendation"
+		   asp-action="ShowChosenList"
+		   asp-route-listId="@($"{list.Key}")">
+			<ul class="block-list">
+				<li>@list.Value[0]</li>
+				<li>@list.Value[1]</li>
+				<li>@list.Value[2]</li>
+				<li>@list.Value[3]</li>
+				<li>@list.Value[2]</li>
+				<li>@list.Value[5]</li>
+			</ul>
+		</a>
 
+		
+	}
+</body>

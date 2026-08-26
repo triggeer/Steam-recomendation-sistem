@@ -1,7 +1,6 @@
-
-
 html {
-  font-size: 14px;
+    font-size: 14px;
+    background-color: gray;
 }
 
 @media (min-width: 768px) {
@@ -15,12 +14,19 @@ html {
 }
 
 html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
+    background-color: gray;
 }
 
+header {
+    background-color: gray;
+}
+
+
 body {
-  margin-bottom: 60px;
+    margin-bottom: 60px;
+    background-color: gray;
 }
 
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
@@ -31,3 +37,19 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+.block-list {
+    display: inline-flex; /* Делает элементы блока гибкими */
+    flex-wrap: wrap; /* Разрешает перенос блоков на новую строку */
+    /*    border-block-end: medium;*/
+    border: 10px;
+    gap: 3px; /* Расстояние между блоками */
+    list-style: none; /* Убирает стандартные точки списка */
+    padding: 0; /* Убирает внутренний отступ */
+}
+
+    .block-list li {
+        background: #f0f0f0; /* Цвет фона блока */
+        padding: 15px 20px; /* Внутренние отступы */
+        border: 1px solid #ccc; /* Граница */
+    }
