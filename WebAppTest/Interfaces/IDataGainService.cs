@@ -14,7 +14,7 @@ namespace WebAppTest.Interfaces
 		Task<List<string>> GetGenres(int appId);
 		Task<SteamGameDto> GetSteamData(int appId);
 		Task<int> GetCurrentGameAmount(string userId);
-		//Task<List<OwnedGameDto>> GetUserGamesIdList(string userId);
+		//Task<List<OwnedGameDto>> GetUserGamesFromSteamAsync(string userId);
 		//Task<List<UserGameDto>> GetUserGames(string userId);
 	}
 }

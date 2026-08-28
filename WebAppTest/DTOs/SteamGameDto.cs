@@ -14,6 +14,7 @@ namespace WebAppTest.DTOs
 
 		[JsonPropertyName("detailed_description")]
 		public string DetailedDescription { get; set; }
-
+		[JsonPropertyName("header_image")]
+		public string ImgUrl { get; set; }
 	}
 }

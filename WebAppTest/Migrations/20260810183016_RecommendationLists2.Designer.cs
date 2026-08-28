@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WebAppTest.Data;
@@ -12,13 +13,15 @@ using WebAppTest.Data;
 namespace WebAppTest.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260810183016_RecommendationLists2")]
+    partial class RecommendationLists2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.30")
+                .HasAnnotation("ProductVersion", "8.0.29")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -32,10 +35,6 @@ namespace WebAppTest.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("DetailedDescription")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ImgUrl")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -181,22 +180,6 @@ namespace WebAppTest.Migrations
                         .IsUnique();
 
                     b.ToTable("Tags");
-                });
-
-            modelBuilder.Entity("WebAppTest.Models.UserGame", b =>
-                {
-                    b.Property<string>("userId")
-                        .HasColumnType("text");
-
-                    b.Property<int>("gameId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("playTime")
-                        .HasColumnType("integer");
-
-                    b.HasKey("userId", "gameId");
-
-                    b.ToTable("UserGames");
                 });
 
             modelBuilder.Entity("WebAppTest.Models.UserList", b =>

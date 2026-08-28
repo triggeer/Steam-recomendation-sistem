@@ -1,0 +1,23 @@
+﻿.faqTable {
+	bottom: 10%;
+	border: thick;
+	background-color: lightslategray;
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	margin-top: auto;
+}
+
+.leftTable {
+	left: 20%;
+}
+
+.middleTable {
+}
+
+.rightTable {
+	right: 20%;
+}
+
+/*.faqTable > div {
+	background-color: grey;
+}*/

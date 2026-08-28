@@ -44,7 +44,7 @@ namespace WebAppTest.Controllers
 		[HttpGet]
 		public async Task<IActionResult> FormRecommendationList(string userLink)
 		{
-			string userId = _userService.TransformLinkToId(userLink);
+			string userId = await _userService.TransformLinkToId(userLink);
 			var cosSimList = await _recommendationService.ForUniqueRecomendationsAsync(userId);
 			return View(cosSimList);
 		}
@@ -56,16 +56,26 @@ namespace WebAppTest.Controllers
 			return View(list);
 		}
 
+
+		[HttpGet]
+		public async Task UpdateGameVectors()
+		{
+			await _recommendationService.AddGameVector();
+		}
+
+
 		public async Task<IActionResult> ShowRecomendationsInARow(string userLink)
 		{
-			string userId = _userService.TransformLinkToId(userLink);
-			//List<RecommendationDto> recommendations = await _recommendationService.FormRecommendationListAsync(userId);
+			string userId = await _userService.TransformLinkToId(userLink);
+
 			List<RecommendationDto> recommendations = await _recommendationService.ForUniqueRecomendationsAsync(userId);
 
 			HttpContext.Session.SetString("Recommendations", JsonSerializer.Serialize(recommendations));
 
 			return RedirectToAction("RecomendationsInARow", new { index = 0 });
 		}
+
+		
 
 		[HttpGet("Recomendation/RecomendationsInARow/{index}")]
 		public async Task<IActionResult> RecomendationsInARow(int index)
@@ -76,8 +86,6 @@ namespace WebAppTest.Controllers
 
 			if (index >= recommendations.Count)
 				return RedirectToAction("Index");
-
-			ViewBag.Index = index;
 
 			RecommendationDto recommendation= recommendations[index];
 
@@ -90,15 +98,98 @@ namespace WebAppTest.Controllers
 			if (game == null)
 				return NotFound();
 
-			return View(game);
+			var model = new GameViewModel
+			{
+				Game = game,
+				Index = index,
+				ListSize = recommendations.Count(),
+				ListId = null
+			};
 
+			return View("Game", model);
 		}
+
+
+		//[HttpGet]
+		//public async Task<IActionResult> ShowPreviousLists(string userLink)
+		//{
+		//	string userId = await _userService.TransformLinkToId(userLink);
+
+		//	Dictionary<int, List<int>> prevLists = await _recommendationService.CollectFormedList(userId);
+
+		//	HttpContext.Session.SetString("Recommendations", JsonSerializer.Serialize(prevLists));
+
+		//	return View(prevLists);
+
+		//}
+
+		//[HttpGet]
+		//public async Task<IActionResult> ShowChosenList(int listId, int index = 0)
+		//{
+		//	string json = HttpContext.Session.GetString("Recommendations");
+
+		//	Dictionary<int, List<int>> lists = JsonSerializer.Deserialize<Dictionary<int, List<int>>>(json);
+
+		//	var chosenList = lists[listId];
+
+		//	var chosenId = chosenList[index];
+
+		//	var game = await _context.Games
+		//		.Include(gt => gt.GameTags)
+		//				.ThenInclude(t => t.Tag)
+		//		.FirstOrDefaultAsync(x => x.Id == chosenId);
+
+		//	var model = new GameViewModel
+		//	{
+		//		Game = game,
+		//		Index = index,
+		//		ListSize = chosenList.Count,
+		//		ListId = listId
+		//	};
+
+		//	return View("Game", model);
+		//}
 
 
 		[HttpGet]
-		public async Task UpdateGameVectors()
+		public async Task<IActionResult> ShowPreviousLists(string userLink)
 		{
-			await _recommendationService.AddGameVector();
+			string userId = await _userService.TransformLinkToId(userLink);
+
+			List<PrevListDto> prevLists = await _recommendationService.CollectFormedList(userId);
+
+			HttpContext.Session.SetString("Recommendations", JsonSerializer.Serialize(prevLists));
+
+			return View(prevLists);
+
 		}
+
+		[HttpGet]
+		public async Task<IActionResult> ShowChosenList(int listId, int index = 0)
+		{
+			string json = HttpContext.Session.GetString("Recommendations");
+
+			List<PrevListDto> lists = JsonSerializer.Deserialize<List<PrevListDto>>(json);
+
+			var chosenList = lists.FirstOrDefault(l => l.Id == listId);
+
+			var chosenId = chosenList.Games[index].Id;
+
+			var game = await _context.Games
+				.Include(gt => gt.GameTags)
+						.ThenInclude(t => t.Tag)
+				.FirstOrDefaultAsync(x => x.Id == chosenId);
+
+			var model = new GameViewModel
+			{
+				Game = game,
+				Index = index,
+				ListSize = chosenList.Games.Count,
+				ListId = listId
+			};
+
+			return View("Game", model);
+		}
+
 	}
 }

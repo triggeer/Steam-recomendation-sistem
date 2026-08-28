@@ -140,6 +140,18 @@ namespace WebAppTest.Services
 			Dictionary<string, SteamStoreResponse>
 			>(steamJson);
 
+			if (steamData[appId.ToString()].success == false)
+			{
+				steamUrl = $"https://store.steampowered.com/api/appdetails?appids={appId}";
+				steamResponse = await _httpClient.GetAsync(steamUrl);
+				steamResponse.EnsureSuccessStatusCode();
+				steamJson = await steamResponse.Content.ReadAsStringAsync();
+				steamData = JsonSerializer.Deserialize<
+					Dictionary<string, SteamStoreResponse>
+					>(steamJson);
+			}
+
+			// {"1938090":{"success":false}}
 			SteamGameDto? steamDto = steamData?[appId.ToString()]?.data;
 
 			return steamDto;

@@ -8,7 +8,7 @@ namespace WebAppTest.Interfaces
 		//Task<SteamGameDto?> GameDetailsAsync(int appId);
 		Task<GameResponse?> GetGame(int appId);
 		Task<bool> ImportGameAsync(int appId);
-		Task UpdateGame(int appId);
+		//Task UpdateGamePrice(int appId);
 		Task<List<Game>?> GetGameList(List<int> appIds);
 	}
 }

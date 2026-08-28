@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components.Forms.Mapping;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.Json;
+using Microsoft.Extensions.Validation;
 using Npgsql.TypeMapping;
 using WebAppTest.Data;
 using WebAppTest.DTOs;
@@ -159,7 +160,7 @@ namespace WebAppTest.Services
 				}
 			}
 
-			var result = new RecommendationsOnTeg{ RecList = list, tag = tag.Name};
+			var result = new RecommendationsOnTeg{ ListGame = list, tag = tag.Name};
 
 			return result;
 		}
@@ -167,12 +168,16 @@ namespace WebAppTest.Services
 
 		public async Task<List<RecommendationDto>> ForUniqueRecomendationsAsync(string userId)
 		{
+			//var list11 = await CollectFormedList(userId);
+			var banList = FormIdBanList(userId);
 			var uniqueList = new List<RecommendationCandidate>();
 			List<RecommendationCandidate> recGames = await FormUnsortedRecommendationList(userId);
 			List<RecommendationCandidate> sortedCandidates = recGames.OrderByDescending(x => x.UserScore).ToList();
+			sortedCandidates.RemoveAll(game => banList.Contains(game.Id));
 
 			Dictionary<(int, int), double> similaritys = new();
 
+			//var first = sortedCandidates.FirstOrDefault(x => !banList.Contains(x.Id));
 			var first = sortedCandidates[0];
 			first.FinalScore = first.UserScore;
 			uniqueList.Add(first);
@@ -194,7 +199,7 @@ namespace WebAppTest.Services
 			var chosenGame = new RecommendationCandidate();
 
 
-			while (uniqueList.Count < 500)
+			while (uniqueList.Count < 30)
 			{
 				/*
 				 * MaxSimilarity не сбрасывается с каждым циклом, 
@@ -253,7 +258,9 @@ namespace WebAppTest.Services
 				list.Add(candidate.Game);
 			}
 			var sortedList = list.OrderByDescending(x => x.Score).ToList();
-			// 2
+
+			await AddUserList(sortedList, userId);
+
 			return sortedList;
 		}
 
@@ -315,6 +322,7 @@ namespace WebAppTest.Services
 			return rating;
 		}
 
+		
 		private async Task<List<RecommendationCandidate>> FormUnsortedRecommendationList(string userId)
 		{
 			var list = new List<RecommendationCandidate>();
@@ -325,8 +333,10 @@ namespace WebAppTest.Services
 			
 			double userTagLen = userProfile.Length;
 
-			List<OwnedGameDto> userGames = await _userService.GetUserGamesIdList(userId);
+			///
+			List<OwnedGameDto> userGames = await _userService.GetActualUserGames(userId);
 			HashSet<int> userIds = userGames.Select(x => x.AppId).ToHashSet();
+			///
 
 			var games = await _context.Games.Select(x => new { 
 				x.Id, 
@@ -370,29 +380,145 @@ namespace WebAppTest.Services
 			return list;
 		}
 
-		//public async Task MMR(List<RecommendationDto> recGames, Dictionary<string, double> userTags)
-		//{
-		//	var uniqueList = new List<RecommendationDto>();
+		/// <summary>
+		/// Записывает данные сформированного списка рекомендаций в БД
+		/// </summary>
+		/// <param name="recommendedList">Сформированный список рекомендаций</param>
+		/// <returns>Записанные данные о сформированном списке в БД</returns>
+		public async Task AddUserList(List<RecommendationDto> recommendedList, string userId)
+		{
+			DateTime updatedAt = DateTime.Now;
+			RecList recList = new RecList(updatedAt);
 
-		//	foreach (var tag in userTags)
+			_context.RecLists.Add(recList);
+			await _context.SaveChangesAsync();
+
+			var gamesFromList = new List<ListGame>();
+
+			int position = 0;
+			foreach (var game in recommendedList)
+			{
+				ListGame listGame = new ListGame(recList.Id, game.GameId, position);
+				position++;
+				gamesFromList.Add(listGame);
+			}
+
+			_context.ListGames.AddRange(gamesFromList);
+
+			var userList = new UserList(userId, recList.Id);
+
+			_context.UserLists.Add(userList);
+
+			await _context.SaveChangesAsync();
+
+		}
+
+		/// <summary>
+		/// Формирует HashSet с id игр, которые уже были в сформированных списках рекомендаций
+		/// </summary>
+		/// <returns>хеш-таблица для быстрого поиска id, которые будем избегать</returns>
+		protected HashSet<int> FormIdBanList(string userId)
+		{
+			var emptyList = new HashSet<int>();
+
+			var userListsData = _context.UserLists.Where(x => x.UserId == userId);
+			if (userListsData.Any())
+			{
+				var userLists = userListsData
+					.Select(x => x.ListId)
+					.ToList();
+
+				List<int> gameIds = _context.ListGames
+					.Where(x => userLists.Contains(x.ListId))
+					.Select(l => l.GameId)
+					.ToList();
+					
+				HashSet<int> hashIds = gameIds.ToHashSet();
+				return hashIds;
+			}
+			else return emptyList;
+		}
+
+		/// <summary>
+		/// Вытягивает из БД все уже сформированные списки пользователя 
+		/// </summary>
+		/// <returns>
+		/// Словарь с id пользователя в качестве ключа 
+		/// и списка id всех сформированных списков рекомендаций как значение</returns>
+		//public async Task<Dictionary<int, List<int>>> CollectFormedList(string userId)
+		//{
+		//	var listOfLists = new Dictionary<int, List<int>>();	
+
+		//	List<int> userListsIds = await _context.UserLists
+		//		.Where(u => u.UserId == userId)
+		//		.Select(l => l.ListId)
+		//		.ToListAsync();
+
+		//	foreach (var listId in userListsIds)
 		//	{
-		//		foreach (var game in recGames)
-		//		{
-		//			if (game.GameTags.Any(t => t.Name == tag.Key))
-		//			{
-		//				if (uniqueList.Count > 0)
-		//				{
-		//					var game1Tags = await _userService.GetGameTagsStrengh1(game.GameId);
-		//					var game2Tags = await _userService.GetGameTagsStrengh1(uniqueList[0].GameId);
-		//					double similarity = await CosSimilarity(game1Tags, game2Tags);
-		//				}
-		//				uniqueList.Add(game);
-		//				recGames.Remove(game);
-		//				break;
-		//			}
-		//		}
+		//		List<int> gamesIds = await _context.ListGames
+		//			.Where(x => x.ListId == listId)
+		//			.OrderBy(g => g.GamePosition)
+		//			.Select(i => i.GameId)
+		//			.ToListAsync();
+
+		//		listOfLists.Add(listId, gamesIds);
 		//	}
+
+		//	return listOfLists;
 		//}
 
+		/// <summary>
+		// var game = await _context.Games
+				//.Include(gt => gt.GameTags)
+				//		.ThenInclude(t => t.Tag)
+				//.FirstOrDefaultAsync(x => x.Id == chosenId);
+
+		/// </summary>
+		/// <param name="userId"></param>
+		/// <returns></returns>
+		public async Task<List<PrevListDto>> CollectFormedList(string userId)
+		{
+			List<PrevListDto> listOfLists = new();
+
+			List<int> userListsIds = await _context.UserLists
+				.Where(u => u.UserId == userId)
+				.Select(l => l.ListId)
+				.ToListAsync();
+
+			foreach (var listId in userListsIds)
+			{
+				//PrevListDto prevList = new PrevListDto();	
+
+				List<int> gamesIds = await _context.ListGames
+					.Where(x => x.ListId == listId)
+					.OrderBy(g => g.GamePosition)
+					.Select(i => i.GameId)
+					.ToListAsync();
+
+				List<GamePreviewDto> gameDetails = await _context.Games
+					.Where(x => gamesIds.Contains(x.Id))
+					.Select(g  => new GamePreviewDto
+					{
+						Id = g.Id,
+						Name = g.Name,
+						ImgUrl = g.ImgUrl
+					})
+					.ToListAsync();
+				
+				var prevList = new PrevListDto() 
+					{ 
+						Id = listId, 
+						Games = gameDetails
+					};
+				//prevList.Id = listId;
+				//prevList.Games = gameDetails;
+
+				listOfLists.Add(prevList);
+			}
+
+			return listOfLists;
+		}
 	}
 }
+

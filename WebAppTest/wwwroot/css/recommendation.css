@@ -1,10 +1,12 @@
 ﻿body {
 	font-family: Stem, Arial, Times New Roman;
+	background-color: gray;
 }
 
 p {
 	margin-bottom: 50px; 	
 }
+
 
 .right-btn {
 	right: 10px;

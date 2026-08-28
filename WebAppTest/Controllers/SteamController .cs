@@ -12,17 +12,21 @@ namespace WebAppTest.Controllers
 		private readonly IImportService _importService;
 		private readonly IDataGainService _dataGainService;
 		private readonly IUserService _userService;
+		private readonly IDBService _dbService;
+
 
 		public SteamController(
 		ISteamService steamService, 
 		IImportService importService, 
 		IDataGainService dataGainService,
-		IUserService userService)
+		IUserService userService,
+		IDBService dbService)
 		{
 			_steamService = steamService;
 			_importService = importService;
 			_dataGainService = dataGainService;
 			_userService = userService;
+			_dbService = dbService;
 		}
 
 		[HttpGet]
@@ -79,7 +83,7 @@ namespace WebAppTest.Controllers
 		[HttpPost]
 		public async Task<IActionResult> UpdateGame(int appId)
 		{
-			await _steamService.UpdateGame(appId);
+			//await _dbService.UpdateGamePrice(appId);
 			return RedirectToAction("GameDetails", new { appId });
 
 		}
@@ -96,17 +100,6 @@ namespace WebAppTest.Controllers
 			return View();
 		}
 
-		//public async Task<IActionResult> GetUserGameTagsValue(string userId)
-		//{
-		//	var tags = await _userService.GetUserGameTags(userId);
-		//	return View(tags);
-		//}
-
-		//public async Task<IActionResult> GetUserGameTagsValue(string userId)
-		//{
-		//	var tags = await _userService.FormUserTagVector(userId);
-		//	return View(tags);
-		//}
 
 		[HttpGet]
 		public async Task<IActionResult> FormGameTagsVector(int gameId)
@@ -117,6 +110,12 @@ namespace WebAppTest.Controllers
 				return View("NoData");
 			}
 			return View(vector);
+		}
+
+		public async Task<IActionResult> UpdateGamesImg()
+		{
+			await _dbService.UpdateImgAsync();
+			return RedirectToPage("/Home/Index");
 		}
 	}
 }

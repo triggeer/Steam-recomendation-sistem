@@ -15,5 +15,7 @@ namespace WebAppTest.Interfaces
 			double fristVectorLen, double secondVectorLen
 		);
 		Task<List<RecommendationDto>> ForUniqueRecomendationsAsync(string userId);
+
+		Task<List<PrevListDto>> CollectFormedList(string userId);
 	}
 }

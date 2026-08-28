@@ -2,7 +2,7 @@
 {
 	public class RecommendationsOnTeg
 	{
-		public List<RecommendationDto> RecList { get; set; }
+		public List<RecommendationDto> ListGame { get; set; }
 		public string tag { get; set; }
 	}
 }

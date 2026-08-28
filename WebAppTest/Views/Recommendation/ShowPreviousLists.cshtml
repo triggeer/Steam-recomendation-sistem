@@ -1,0 +1,31 @@
+﻿@using WebAppTest.DTOs
+@model List<PrevListDto>
+
+<head>
+	@{
+		ViewData["Title"] = "Предыдущие списки";
+	}
+	<link href="~/css/site.css" rel="stylesheet" />
+</head>
+
+<body>
+	@foreach (var list in Model)
+	{
+		<h1>@list.Id</h1>
+
+		<a asp-controller="Recommendation"
+		   asp-action="ShowChosenList"
+		   asp-route-listId="@($"{list.Id}")">
+			<ul class="block-list">
+				@foreach (var game in list.Games.Take(6))
+				{
+					<li>
+						<img src="@game.ImgUrl" alt="@game.Name" width=350 height=197 />
+					</li>
+				}
+			</ul>
+		</a>
+
+		
+	}
+</body>
