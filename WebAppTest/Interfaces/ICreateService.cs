@@ -7,6 +7,7 @@ namespace WebAppTest.Interfaces
 		Task<Game> GameCreate(
 		int appId,
 		string name, 
+		string imgUrl,
 		string detaildDescription,
 		double userScore,
 		int reviewAmount,

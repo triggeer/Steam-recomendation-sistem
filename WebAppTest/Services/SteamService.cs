@@ -101,7 +101,7 @@ namespace WebAppTest.Services
 					
 
 					Game game = await _createService.GameCreate(
-					appId, steamDto.Name, steamDto.DetailedDescription,
+					appId, steamDto.Name, steamDto.ImgUrl, steamDto.DetailedDescription,
 					userScore, reviewAmount, owners,
 					initialPrice, vectorLength, genres, tags);
 
@@ -113,32 +113,6 @@ namespace WebAppTest.Services
 			else return false;
 		}
 
-		public async Task UpdateGame(int appId)
-		{
-			var exists = await _dataGainService.CheckGameExistense(appId);
-			if (!exists)
-			{
-				await ImportGameAsync(appId);
-				return;
-			}
-			else
-			{
-				var oldGame = await _context.Games
-									.FirstOrDefaultAsync(g => g.SteamAppId == appId);
-
-
-				int? newInitialPrice = await _dataGainService.GetInitPrice(appId);
-
-
-				if (oldGame.InitialPrice == newInitialPrice)
-					return;
-				else
-				{
-					oldGame.UpdateInitialPrice(newInitialPrice);
-					await _context.SaveChangesAsync();
-					return;
-				}
-			}
-		}
+		
 	}
 }

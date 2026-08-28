@@ -16,6 +16,6 @@ namespace WebAppTest.Interfaces
 		);
 		Task<List<RecommendationDto>> ForUniqueRecomendationsAsync(string userId);
 
-		Task<Dictionary<int, List<int>>> CollectFormedList(string userId);
+		Task<List<PrevListDto>> CollectFormedList(string userId);
 	}
 }

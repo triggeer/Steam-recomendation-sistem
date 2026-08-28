@@ -30,6 +30,7 @@ namespace WebAppTest.Services
 		public async Task<Game> GameCreate(
 			int appId, 
 			string name, 
+			string imgUrl,
 			string detaildDescription, 
 			double userScore, 
 			int reviewAmount, 
@@ -40,7 +41,7 @@ namespace WebAppTest.Services
 			Dictionary<string, int> tags
 			)
 		{
-			var game = new Game(appId, name, detaildDescription, userScore, reviewAmount, owners, initialPrice, vectorLength);
+			var game = new Game(appId, name, imgUrl, detaildDescription, userScore, reviewAmount, owners, initialPrice, vectorLength);
 
 			foreach (string genreName in genres)
 			{

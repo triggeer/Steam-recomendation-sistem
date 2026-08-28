@@ -1,4 +1,5 @@
-﻿@model Dictionary<int, List<int>>
+﻿@using WebAppTest.DTOs
+@model List<PrevListDto>
 
 <head>
 	@{
@@ -10,18 +11,18 @@
 <body>
 	@foreach (var list in Model)
 	{
-		<h1>@list.Key</h1>
+		<h1>@list.Id</h1>
 
 		<a asp-controller="Recommendation"
 		   asp-action="ShowChosenList"
-		   asp-route-listId="@($"{list.Key}")">
+		   asp-route-listId="@($"{list.Id}")">
 			<ul class="block-list">
-				<li>@list.Value[0]</li>
-				<li>@list.Value[1]</li>
-				<li>@list.Value[2]</li>
-				<li>@list.Value[3]</li>
-				<li>@list.Value[2]</li>
-				<li>@list.Value[5]</li>
+				@foreach (var game in list.Games.Take(6))
+				{
+					<li>
+						<img src="@game.ImgUrl" alt="@game.Name" width=350 height=197 />
+					</li>
+				}
 			</ul>
 		</a>
 

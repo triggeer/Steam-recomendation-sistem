@@ -445,9 +445,41 @@ namespace WebAppTest.Services
 		/// <returns>
 		/// Словарь с id пользователя в качестве ключа 
 		/// и списка id всех сформированных списков рекомендаций как значение</returns>
-		public async Task<Dictionary<int, List<int>>> CollectFormedList(string userId)
+		//public async Task<Dictionary<int, List<int>>> CollectFormedList(string userId)
+		//{
+		//	var listOfLists = new Dictionary<int, List<int>>();	
+
+		//	List<int> userListsIds = await _context.UserLists
+		//		.Where(u => u.UserId == userId)
+		//		.Select(l => l.ListId)
+		//		.ToListAsync();
+
+		//	foreach (var listId in userListsIds)
+		//	{
+		//		List<int> gamesIds = await _context.ListGames
+		//			.Where(x => x.ListId == listId)
+		//			.OrderBy(g => g.GamePosition)
+		//			.Select(i => i.GameId)
+		//			.ToListAsync();
+
+		//		listOfLists.Add(listId, gamesIds);
+		//	}
+
+		//	return listOfLists;
+		//}
+
+		/// <summary>
+		// var game = await _context.Games
+				//.Include(gt => gt.GameTags)
+				//		.ThenInclude(t => t.Tag)
+				//.FirstOrDefaultAsync(x => x.Id == chosenId);
+
+		/// </summary>
+		/// <param name="userId"></param>
+		/// <returns></returns>
+		public async Task<List<PrevListDto>> CollectFormedList(string userId)
 		{
-			var listOfLists = new Dictionary<int, List<int>>();	
+			List<PrevListDto> listOfLists = new();
 
 			List<int> userListsIds = await _context.UserLists
 				.Where(u => u.UserId == userId)
@@ -456,16 +488,37 @@ namespace WebAppTest.Services
 
 			foreach (var listId in userListsIds)
 			{
+				//PrevListDto prevList = new PrevListDto();	
+
 				List<int> gamesIds = await _context.ListGames
 					.Where(x => x.ListId == listId)
 					.OrderBy(g => g.GamePosition)
 					.Select(i => i.GameId)
 					.ToListAsync();
 
-				listOfLists.Add(listId, gamesIds);
+				List<GamePreviewDto> gameDetails = await _context.Games
+					.Where(x => gamesIds.Contains(x.Id))
+					.Select(g  => new GamePreviewDto
+					{
+						Id = g.Id,
+						Name = g.Name,
+						ImgUrl = g.ImgUrl
+					})
+					.ToListAsync();
+				
+				var prevList = new PrevListDto() 
+					{ 
+						Id = listId, 
+						Games = gameDetails
+					};
+				//prevList.Id = listId;
+				//prevList.Games = gameDetails;
+
+				listOfLists.Add(prevList);
 			}
 
 			return listOfLists;
 		}
 	}
 }
+

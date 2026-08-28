@@ -5,6 +5,7 @@ using WebAppTest.Data;
 using WebAppTest.Interfaces;
 using WebAppTest.Services;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 //"ConnectionStrings": {
@@ -19,7 +20,8 @@ var dataSourceBuilder =
 dataSourceBuilder.EnableDynamicJson();
 
 var dataSource = dataSourceBuilder.Build();
-
+//
+//builder.Services.AddScoped<IDBService, DBService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -29,6 +31,7 @@ builder.Services.AddHttpClient<IDataGainService, DataGainService>();
 builder.Services.AddHttpClient<ICreateService,  CreateService>();
 builder.Services.AddHttpClient<IUserService, UserService>();
 builder.Services.AddHttpClient<IRecommendationService, RecommendationService>();
+builder.Services.AddHttpClient<IDBService, DBService>();
 //builder.Services.AddDbContext<AppDbContext>();
 builder.Services.AddDbContext<AppDbContext>(options =>	options.UseNpgsql(dataSource));
 
@@ -51,6 +54,13 @@ if (!app.Environment.IsDevelopment())
 	app.UseHsts();
 }
 
+////
+//using (var scope = app.Services.CreateScope())
+//{
+//	var myService = scope.ServiceProvider.GetRequiredService<IDBService>();
+//	await myService.UpdateGamesData();
+//}
+
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseSession();
@@ -66,3 +76,4 @@ app.MapControllerRoute(
 
 
 app.Run();
+
