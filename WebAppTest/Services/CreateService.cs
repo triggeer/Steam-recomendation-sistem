@@ -36,12 +36,13 @@ namespace WebAppTest.Services
 			int reviewAmount, 
 			long owners, 
 			int? initialPrice, 
+			int? finalPrice, 
 			double vectorLength, 
 			List<string> genres, 
 			Dictionary<string, int> tags
 			)
 		{
-			var game = new Game(appId, name, imgUrl, detaildDescription, userScore, reviewAmount, owners, initialPrice, vectorLength);
+			var game = new Game(appId, name, imgUrl, detaildDescription, userScore, reviewAmount, owners, initialPrice, finalPrice, vectorLength);
 
 			foreach (string genreName in genres)
 			{

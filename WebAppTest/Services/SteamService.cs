@@ -93,7 +93,7 @@ namespace WebAppTest.Services
 
 					long owners = await _dataGainService.GetOwners(appId);
 
-					int? initialPrice = await _dataGainService.GetInitPrice(appId);
+					//int? initialPrice = await _dataGainService.GetInitPrice(appId);
 
 					double vectorLength = 0;
 
@@ -103,7 +103,7 @@ namespace WebAppTest.Services
 					Game game = await _createService.GameCreate(
 					appId, steamDto.Name, steamDto.ImgUrl, steamDto.DetailedDescription,
 					userScore, reviewAmount, owners,
-					initialPrice, vectorLength, genres, tags);
+					steamDto.Price.Initial, steamDto.Price.Final, vectorLength, genres, tags);
 
 					await _createService.AddGame(game);
 					return true;
@@ -112,7 +112,7 @@ namespace WebAppTest.Services
 			}
 			else return false;
 		}
-
+		/////////////
 		
 	}
 }

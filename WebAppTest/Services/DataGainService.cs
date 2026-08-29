@@ -77,6 +77,11 @@ namespace WebAppTest.Services
 			return initialPrice;
 		}
 
+		//public async Task<int?> GetFinalPrice(int appId)
+		//{
+			
+		//}
+
 		public async Task<Dictionary<string, int>> GetTags(int appId)
 		{
 			var tags = new Dictionary<string, int>();

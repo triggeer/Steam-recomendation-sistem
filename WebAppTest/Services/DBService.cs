@@ -2,6 +2,7 @@
 using WebAppTest.Data;
 using WebAppTest.DTOs;
 using WebAppTest.Interfaces;
+using WebAppTest.Models;
 
 namespace WebAppTest.Services
 {
@@ -31,50 +32,62 @@ namespace WebAppTest.Services
 		}
 
 
-		//public async Task UpdateGamePrice(int appId)
+		//public async Task UpdateAllGamePrice()
 		//{
-		//	var exists = await _dataGainService.CheckGameExistense(appId);
-		//	if (!exists)
+		//	List<int> appIds = await _context.Games.Select(x => x.Id).ToListAsync();
+
+		//	foreach (var appId in appIds)
 		//	{
-		//		await _steamService.ImportGameAsync(appId);
-		//		return;
-		//	}
-		//	else
-		//	{
-		//		var oldGame = await _context.Games
-		//							.FirstOrDefaultAsync(g => g.SteamAppId == appId);
-
-
-		//		int? newInitialPrice = await _dataGainService.GetInitPrice(appId);
-
-
-		//		if (oldGame.InitialPrice == newInitialPrice)
-		//			return;
-		//		else
+		//		Game dbGame = await _context.Games.FirstOrDefaultAsync(g => g.Id == appId);
+		//		if (string.IsNullOrEmpty(dbGame.ImgUrl))
 		//		{
-		//			oldGame.UpdateInitialPrice(newInitialPrice);
+		//			SteamGameDto freshData = await _dataGainService.GetSteamData(dbGame.SteamAppId);
+		//			if (freshData != null)
+		//			{
+		//				dbGame.UpdateImageUrl(freshData.ImgUrl);
+		//			}
 		//			await _context.SaveChangesAsync();
-		//			return;
 		//		}
 		//	}
 		//}
 
-		public async Task UpdateImgAsync()
+		public async Task UpdateGamePrice(int appId)
+		{
+			Game dbGame = await _context.Games.FirstOrDefaultAsync(g => g.Id == appId);
+
+			SteamGameDto freshData = await _dataGainService.GetSteamData(dbGame.SteamAppId);
+			if (freshData != null )
+			{
+				if (freshData.Price == null)
+					dbGame.UpdateFinalPrice(0);
+				else
+					dbGame.UpdateFinalPrice(freshData.Price.Final);
+				
+			}
+			await _context.SaveChangesAsync();	
+		}
+
+		public async Task UpdateAllImgAsync()
 		{
 			List<int> appIds = await _context.Games.Select(x => x.Id).ToListAsync();
 
 			foreach (var appId in appIds)
 			{
-				var dbGame = await _context.Games.FirstOrDefaultAsync(g => g.Id == appId);
-				if (string.IsNullOrEmpty(dbGame.ImgUrl))
+				await UpdateImgAsync(appId);
+			}
+		}
+
+		public async Task UpdateImgAsync(int appId)
+		{
+			Game dbGame = await _context.Games.FirstOrDefaultAsync(g => g.Id == appId);
+			if (string.IsNullOrEmpty(dbGame.ImgUrl))
+			{
+				SteamGameDto freshData = await _dataGainService.GetSteamData(dbGame.SteamAppId);
+				if (freshData != null)
 				{
-					SteamGameDto freshData = await _dataGainService.GetSteamData(dbGame.SteamAppId);
-					if (freshData != null)
-					{
-						dbGame.UpdateImageUrl(freshData.ImgUrl);
-					}
-					await _context.SaveChangesAsync();
+					dbGame.UpdateImageUrl(freshData.ImgUrl);
 				}
+				await _context.SaveChangesAsync();
 			}
 		}
 

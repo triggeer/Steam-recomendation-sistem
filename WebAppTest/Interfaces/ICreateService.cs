@@ -13,6 +13,7 @@ namespace WebAppTest.Interfaces
 		int reviewAmount,
 		long owners,
 		int? initialPrice,
+		int? finalPrice,
 		double vectorLength,
 		List<string> genres, 
 		Dictionary<string, int> tags);

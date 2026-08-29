@@ -83,7 +83,7 @@ namespace WebAppTest.Controllers
 		[HttpPost]
 		public async Task<IActionResult> UpdateGame(int appId)
 		{
-			//await _dbService.UpdateGamePrice(appId);
+			await _dbService.UpdateGamePrice(appId);
 			return RedirectToAction("GameDetails", new { appId });
 
 		}
@@ -114,7 +114,7 @@ namespace WebAppTest.Controllers
 
 		public async Task<IActionResult> UpdateGamesImg()
 		{
-			await _dbService.UpdateImgAsync();
+			await _dbService.UpdateAllImgAsync();
 			return RedirectToPage("/Home/Index");
 		}
 	}
