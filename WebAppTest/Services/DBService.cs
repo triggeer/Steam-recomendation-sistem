@@ -32,39 +32,34 @@ namespace WebAppTest.Services
 		}
 
 
-		//public async Task UpdateAllGamePrice()
-		//{
-		//	List<int> appIds = await _context.Games.Select(x => x.Id).ToListAsync();
-
-		//	foreach (var appId in appIds)
-		//	{
-		//		Game dbGame = await _context.Games.FirstOrDefaultAsync(g => g.Id == appId);
-		//		if (string.IsNullOrEmpty(dbGame.ImgUrl))
-		//		{
-		//			SteamGameDto freshData = await _dataGainService.GetSteamData(dbGame.SteamAppId);
-		//			if (freshData != null)
-		//			{
-		//				dbGame.UpdateImageUrl(freshData.ImgUrl);
-		//			}
-		//			await _context.SaveChangesAsync();
-		//		}
-		//	}
-		//}
+		public async Task UpdateAllGamePrice()
+		{
+			List<int> appIds = await _context.Games.Select(x => x.Id).ToListAsync();
+			int count = 0;
+			foreach (var appId in appIds)
+			{
+				count++;
+				await UpdateGamePrice(appId);
+				if (count == 10)
+				{
+					count = 0;
+					await _context.SaveChangesAsync();
+				}
+			}
+		}
 
 		public async Task UpdateGamePrice(int appId)
 		{
 			Game dbGame = await _context.Games.FirstOrDefaultAsync(g => g.Id == appId);
 
 			SteamGameDto freshData = await _dataGainService.GetSteamData(dbGame.SteamAppId);
-			if (freshData != null )
+			if (freshData != null)
 			{
 				if (freshData.Price == null)
 					dbGame.UpdateFinalPrice(0);
 				else
 					dbGame.UpdateFinalPrice(freshData.Price.Final);
-				
 			}
-			await _context.SaveChangesAsync();	
 		}
 
 		public async Task UpdateAllImgAsync()

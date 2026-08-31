@@ -77,15 +77,15 @@ namespace WebAppTest.Services
 			return initialPrice;
 		}
 
-		//public async Task<int?> GetFinalPrice(int appId)
-		//{
-			
-		//}
-
 		public async Task<Dictionary<string, int>> GetTags(int appId)
 		{
-			var tags = new Dictionary<string, int>();
 			SpyGameDto spyDto = await GetSpyData(appId);
+			return GetTags(spyDto);
+		}
+
+		public Dictionary<string, int> GetTags(SpyGameDto spyDto)
+		{
+			var tags = new Dictionary<string, int>();
 
 			if (spyDto.Tags.ValueKind == JsonValueKind.Object)
 			{
@@ -94,7 +94,7 @@ namespace WebAppTest.Services
 					tags[property.Name] = property.Value.GetInt32();
 				}
 			}
-			
+
 			return tags;
 		}
 
@@ -122,9 +122,15 @@ namespace WebAppTest.Services
 			return (result, total);
 		}
 
-		public async Task<long> GetOwners(int  appId)
+		public async Task<long> GetOwners(int appId)
 		{
-			var spyDto = await GetSpyData(appId);
+			SpyGameDto spyDto = await GetSpyData(appId);
+			long owners = GetOwners(spyDto);
+			return owners;
+		}
+
+		public long GetOwners(SpyGameDto spyDto)
+		{
 			string ownersString = spyDto.Owners;
 			string firstPart = ownersString.Split("..")[0].Trim();
 			long owners = long.Parse(firstPart, NumberStyles.AllowThousands, CultureInfo.InvariantCulture);
@@ -133,7 +139,7 @@ namespace WebAppTest.Services
 
 		public async Task<SteamGameDto> GetSteamData(int appId)
 		{
-			var steamUrl = $"https://store.steampowered.com/api/appdetails?appids={appId}&l=russian";
+			var steamUrl = $"https://store.steampowered.com/api/appdetails?appids={appId}&cc=ru&l=russian";
 
 			var steamResponse = await _httpClient.GetAsync(steamUrl);
 
@@ -164,8 +170,13 @@ namespace WebAppTest.Services
 
 		public async Task<List<string>> GetGenres(int appId)
 		{
-			var genres = new List<string>();
 			var steamDto = await GetSteamData(appId);
+			return GetGenres(steamDto);
+		}
+
+		public List<string> GetGenres(SteamGameDto steamDto)
+		{
+			var genres = new List<string>();
 			if (steamDto.Genres != null)
 			{
 				genres = steamDto.Genres.Select(g => g.Description).ToList(); //////////////////

@@ -55,21 +55,20 @@ namespace WebAppTest.Services
 					existingGenre = new Genre(genreName);
 					_context.Genres.Add(existingGenre);
 				}
-
+				
 				// Добавляем связь игры и жанра
-				game.GameGenres.Add(new GameGenre
-				{
-					Game = game,
-					Genre = existingGenre
-				}
-				);
+				game.GameGenres.Add(new GameGenre(game, existingGenre));
 			}
 
 			foreach (KeyValuePair<string, int> tagPair in tags)
 			{
+				int sum = tags.Values.Sum();	
+
 				string tagName = tagPair.Key;
 
 				int tagWeight = tagPair.Value;
+
+				double strength = (double)tagPair.Value / sum;
 
 				Tag? existingTag = await _context.Tags.FirstOrDefaultAsync(t => t.Name == tagName);
 
@@ -80,12 +79,7 @@ namespace WebAppTest.Services
 					_context.Tags.Add(existingTag);
 				}
 
-				game.GameTags.Add(new GameTag
-				{
-					Game = game,
-					Tag = existingTag,
-					Weight = tagWeight
-				});
+				game.GameTags.Add(new GameTag(game, existingTag, tagWeight, strength));
 			}
 
 			return game;

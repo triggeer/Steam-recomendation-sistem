@@ -1,13 +1,16 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using WebAppTest.Data;
 using WebAppTest.DTOs;
 using WebAppTest.Interfaces;
-using WebAppTest.Services;
 using WebAppTest.Models;
+using WebAppTest.Services;
 
 namespace WebAppTest.Controllers
 {
 	public class SteamController : Controller
 	{
+		private readonly AppDbContext _context;
 		private readonly ISteamService _steamService;
 		private readonly IImportService _importService;
 		private readonly IDataGainService _dataGainService;
@@ -16,12 +19,14 @@ namespace WebAppTest.Controllers
 
 
 		public SteamController(
+		AppDbContext context,
 		ISteamService steamService, 
 		IImportService importService, 
 		IDataGainService dataGainService,
 		IUserService userService,
 		IDBService dbService)
 		{
+			_context = context;
 			_steamService = steamService;
 			_importService = importService;
 			_dataGainService = dataGainService;
@@ -84,8 +89,15 @@ namespace WebAppTest.Controllers
 		public async Task<IActionResult> UpdateGame(int appId)
 		{
 			await _dbService.UpdateGamePrice(appId);
+			await _context.SaveChangesAsync();
 			return RedirectToAction("GameDetails", new { appId });
+		}
 
+		public async Task<IActionResult> UpdateAllGames()
+		{
+			await _dbService.UpdateAllGamePrice();
+			await _context.SaveChangesAsync();
+			return RedirectToPage("/Home/Index");
 		}
 
 		[HttpPost]

@@ -2,7 +2,7 @@
 {
 	public interface IDBService
 	{
-		//Task UpdateGamePrice(int appId);
+		Task UpdateAllGamePrice();
 		Task UpdateGamePrice(int appId);
 		Task UpdateAllImgAsync();
 	}

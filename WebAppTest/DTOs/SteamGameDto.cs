@@ -8,7 +8,7 @@ namespace WebAppTest.DTOs
 		public int SteamAppId { get; set; }
 
 		[JsonPropertyName("name")]
-		public string Name { get; set; }
+		public string Name { get; set; } = string.Empty;
 		
 		[JsonPropertyName("genres")]
 		public List<SteamGenreDto> Genres { get; set; }

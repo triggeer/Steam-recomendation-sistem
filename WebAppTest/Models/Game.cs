@@ -18,7 +18,7 @@ namespace WebAppTest.Models
 		public double UserScore { get; private set; }
 		public int ReviewAmount { get; private set; }
 		public long Owners {  get; private set; }
-		public int? InitialPrice { get; private set; } = 0;
+		public int InitialPrice { get; private set; } = 0;
 		public int? FinalPrice { get; private set; } = 0;
 		public double VectorLength { get; private set; }
 		private Game(){ }
@@ -57,14 +57,7 @@ namespace WebAppTest.Models
 		
 		public void UpdateFinalPrice(int? newFinalPrice)
 		{
-			if (newFinalPrice == null)
-			{
-				FinalPrice = 0;
-			}
-			else
-			{
-				FinalPrice = newFinalPrice ?? InitialPrice;
-			}
+			FinalPrice = newFinalPrice ?? InitialPrice;
 		}
 		
 	}

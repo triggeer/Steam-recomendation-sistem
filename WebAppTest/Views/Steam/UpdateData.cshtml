@@ -1,19 +1,27 @@
 ﻿<h1>Update Steam Game</h1>
 
-<form asp-action="UpdateGame" asp-controller="Steam" method="post">
-    <label for="appId">Update Game AppId</label>
 
-    <input type="number"
-           id="appId"
-           name="appId"
-           class="form-control" />
+<body>
+	<form asp-action="UpdateGame" asp-controller="Steam" method="post">
+		<label for="appId">Update Game AppId</label>
 
-    <br />
+		<input type="number"
+			   id="appId"
+			   name="appId"
+			   class="form-control" />
 
-    <button type="submit"
-            class="btn btn-primary">
-        Search
-    </button>
-</form>
+		<br />
 
-	
+		<button type="submit"
+				class="btn btn-primary">
+			Search
+		</button>
+	</form>
+
+	<form asp-action="UpdateAllGames" asp-controller="Steam">
+		<button type="submit"
+			class="byn btn-primary">
+			Обновить цены
+		</button>
+	</form>
+</body>

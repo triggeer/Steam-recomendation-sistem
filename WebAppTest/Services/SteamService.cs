@@ -58,7 +58,7 @@ namespace WebAppTest.Services
 				DetailedDescription = game.DetailedDescription,
 				UserScore = game.UserScore,
 				Owners = game.Owners,
-				InitialPrice = game.InitialPrice ?? 0
+				InitialPrice = game.InitialPrice
 			};
 			return details;
 		}
@@ -82,23 +82,27 @@ namespace WebAppTest.Services
 			bool exitsts = await _dataGainService.CheckGameExistense(appId);
 			if (!exitsts)
 			{
+				// эндпоинт стима
 				SteamGameDto steamDto = await _dataGainService.GetSteamData(appId);
 				if (steamDto != null)
 				{
+					// эндпоинт спайа
 					SpyGameDto spyDto = await _dataGainService.GetSpyData(appId);
 
-					Dictionary<string, int> tags = await _dataGainService.GetTags(appId);
+					Dictionary<string, int> tags = _dataGainService.GetTags(spyDto);
 
+					// эндпоинт стима на отзывы
 					(double userScore, int reviewAmount) = await _dataGainService.GetUserScore(appId);
 
-					long owners = await _dataGainService.GetOwners(appId);
+					long owners = _dataGainService.GetOwners(spyDto);
 
-					//int? initialPrice = await _dataGainService.GetInitPrice(appId);
+					int? initialPrice = steamDto.Price.Initial;
+
+					int? finalPrice = steamDto.Price.Final;
 
 					double vectorLength = 0;
 
-					List<string> genres = await _dataGainService.GetGenres(appId);
-					
+					List<string> genres = _dataGainService.GetGenres(steamDto);
 
 					Game game = await _createService.GameCreate(
 					appId, steamDto.Name, steamDto.ImgUrl, steamDto.DetailedDescription,
@@ -112,7 +116,6 @@ namespace WebAppTest.Services
 			}
 			else return false;
 		}
-		/////////////
 		
 	}
 }
