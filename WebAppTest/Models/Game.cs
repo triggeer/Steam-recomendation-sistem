@@ -9,7 +9,7 @@ namespace WebAppTest.Models
 		[Key]
 		[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
 		public int Id { get; private set; }
-		public int SteamAppId { get; private set; }
+		public int SteamAppId { get; init; }
 		public string Name { get; private set; }
 		public string? ImgUrl { get; private set; }
 		public ICollection<GameGenre> GameGenres{ get; private set; }

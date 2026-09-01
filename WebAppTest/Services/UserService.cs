@@ -5,6 +5,7 @@ using WebAppTest.Data;
 using WebAppTest.DTOs;
 using WebAppTest.Interfaces;
 using WebAppTest.Models;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WebAppTest.Services
 {
@@ -32,7 +33,7 @@ namespace WebAppTest.Services
 
 		public async Task<UserVectorResponse?> GetUserVector(string userId)
 		{
-			UserProfile? userProfile = await _context.UserProfiles.FirstOrDefaultAsync(v => v.Id == userId);
+			UserProfile? userProfile = await _context.UserProfiles.FirstOrDefaultAsync(v => v.UserId == userId);
 			var vector = new UserVectorResponse
 			{
 				TagStrength = userProfile.TagStrength,
@@ -146,11 +147,11 @@ namespace WebAppTest.Services
 		public async Task<List<OwnedGameDto>?> GetUserOwnedGamesAsync(string userId)
 		{
 			List<OwnedGameDto> userGameIds = await _context.UserGames
-				.Where (u => u.userId == userId)
+				.Where (u => u.UserId == userId)
 				.Select(g => new OwnedGameDto 
 				{ 
-					AppId = g.gameId,
-					PlayTime = g.playTime
+					AppId = g.GameId,
+					PlayTime = g.PlayTime
 				})
 				.ToListAsync();
 
@@ -160,7 +161,7 @@ namespace WebAppTest.Services
 		public async Task<List<OwnedGameDto>?> GetActualUserGames(string userId)
 		{
 			var profile = await _context.UserProfiles
-				.FirstOrDefaultAsync(x => x.Id == userId);
+				.FirstOrDefaultAsync(x => x.UserId == userId);
 
 			DateTimeOffset weekAgo = DateTimeOffset.UtcNow.AddDays(-7);
 
@@ -170,10 +171,8 @@ namespace WebAppTest.Services
 
 				await UpdateUserGames(userId, steamGames);
 
-				if (profile != null)
-				{
-					profile.UpdatedAt = DateTime.UtcNow;
-				}
+				// ?????????????????
+				await UpdateUserProfile(userId);
 
 				await _context.SaveChangesAsync();
 			}
@@ -184,26 +183,26 @@ namespace WebAppTest.Services
 		public async Task UpdateUserGames(string userId, List<OwnedGameDto> actualGames)
 		{
 			var dbUserGames = await _context.UserGames
-				.Where(u => u.userId == userId)
-				.ToDictionaryAsync(x => x.gameId, x => x);
+				.Where(u => u.UserId == userId)
+				.ToDictionaryAsync(x => x.GameId, x => x);
 
 			foreach (var actualGame in actualGames)
 			{
 				if (dbUserGames.TryGetValue(actualGame.AppId, out UserGame existingGame))
 				{
-					if (existingGame.playTime != actualGame.PlayTime)
+					if (existingGame.PlayTime != actualGame.PlayTime)
 					{
-						existingGame.playTime = actualGame.PlayTime;
+						existingGame.UpdatePlayTime(actualGame.PlayTime);
 					}
 				}
 				else
 				{
 					_context.UserGames.Add(new UserGame
-					{
-						userId = userId,
-						gameId = actualGame.AppId,
-						playTime = actualGame.PlayTime
-					});
+					(	
+						userId, 
+						actualGame.AppId, 
+						actualGame.PlayTime
+					));
 				}
 			}
 			var actualIds = actualGames
@@ -211,10 +210,12 @@ namespace WebAppTest.Services
 				.ToHashSet();
 
 			var gamesToRemove = dbUserGames.Values
-				.Where(x => !actualIds.Contains(x.gameId))
+				.Where(x => !actualIds.Contains(x.GameId))
 				.ToList();
 				
 			_context.UserGames.RemoveRange(gamesToRemove);
+			
+			return;
 		}
 
 		public async Task<Dictionary<int, Dictionary<string, double>>> GetUserGameTags(string userId)
@@ -421,7 +422,6 @@ namespace WebAppTest.Services
 		 	 */
 			Dictionary<int, Dictionary<string, double>> tags = await GetUserGameTags(userId);
 
-
 			Dictionary<int, double> userTags = new();
 
 			foreach (var tag in tags)
@@ -457,13 +457,16 @@ namespace WebAppTest.Services
 			await _context.SaveChangesAsync();
 		}
 
-		public async Task UpdateUserVector(string userId)
+		public async Task UpdateUserProfile(string userId)
 		{
-			UserProfile? oldVector = await _context.UserProfiles.FirstOrDefaultAsync(v => v.Id == userId);
-			var newVector = await CreateUserVector(userId);
-			DateTime updatedAt = DateTime.Now;
-			oldVector.Update(userId, newVector.TagStrength, newVector.Length, newVector.GameAmount, newVector.UpdatedAt);
-			await _context.SaveChangesAsync();
+			UserProfile? oldProfile = await _context.UserProfiles.FirstOrDefaultAsync(v => v.UserId == userId);
+			if (oldProfile != null )
+			{
+				UserProfile actualProfile = await CreateUserVector(userId);
+				DateTime updatedAt = DateTime.Now;
+				oldProfile?.Update(actualProfile.TagStrength, actualProfile.Length, actualProfile.GameAmount, actualProfile.UpdatedAt);
+				//await _context.SaveChangesAsync();
+			}
 			return;
 		}
 

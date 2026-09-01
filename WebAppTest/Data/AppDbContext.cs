@@ -33,13 +33,13 @@ namespace WebAppTest.Data
 		// делаем названия в таблицах жанров и тегов уникальными
 			modelBuilder.Entity<Genre>().HasIndex(g => g.Name).IsUnique();
 			modelBuilder.Entity<Tag>().HasIndex(t => t.Name).IsUnique();
-			modelBuilder.Entity<UserProfile>().HasIndex(i => i.Id).IsUnique();
+			modelBuilder.Entity<UserProfile>().HasKey(i => i.UserId);
 			modelBuilder.Entity<UserProfile>().Property(t => t.TagStrength).HasColumnType("jsonb");
 			modelBuilder.Entity<RecList>().HasIndex(i => i.Id).IsUnique();
 			modelBuilder.Entity<ListGame>().HasKey(lg => new { lg.ListId, lg.GameId });
 			modelBuilder.Entity<ListGame>().HasIndex(lp => new { lp.ListId, lp.GamePosition }).IsUnique();
 			modelBuilder.Entity<UserList>().HasKey(ul => new { ul.UserId, ul.ListId});
-			modelBuilder.Entity<UserGame>().HasKey(ug => new { ug.userId, ug.gameId });
+			modelBuilder.Entity<UserGame>().HasKey(ug => new { ug.UserId, ug.GameId });
 
 
 

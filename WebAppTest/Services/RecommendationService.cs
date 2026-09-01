@@ -118,7 +118,8 @@ namespace WebAppTest.Services
 			if (vector.GameAmount != gameAmount || (currentDate - vector.UpdatedAt) > TimeSpan.FromDays(7))
 			{
 
-				await _userService.UpdateUserVector(userId);
+				await _userService.UpdateUserProfile(userId);
+				await _context.SaveChangesAsync();
 			}
 
 
@@ -329,7 +330,7 @@ namespace WebAppTest.Services
 			
 			Dictionary<int, double> userTags = await FormUserTagsDict(userId);
 			
-			var userProfile = await _context.UserProfiles.FirstOrDefaultAsync(x => x.Id == userId);
+			var userProfile = await _context.UserProfiles.FirstOrDefaultAsync(x => x.UserId == userId);
 			
 			double userTagLen = userProfile.Length;
 

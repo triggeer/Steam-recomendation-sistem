@@ -2,16 +2,11 @@
 {
 	public class ListGame
 	{
-		public int ListId { get; set; }
-		public int GameId { get; set; }
-		public int GamePosition { get; set; }
+		public int ListId { get; private set; }
+		public int GameId { get; private set; }
+		public int GamePosition { get; private set; }
 
-		//public ListGame(int Id, int GameId)
-		//{
-		//	_listId = Id;
-		//	_gameId = GameId;
-
-		//}
+		private ListGame(){ }
 		public ListGame(int listId, int gameId, int gamePosition)
 		{
 			ListId = listId;

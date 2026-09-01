@@ -39,7 +39,7 @@ namespace WebAppTest.Services
 
 		public async Task<bool> ChekUserTagVectorExistense(string userId)
 		{
-			bool exists = await _context.UserProfiles.AnyAsync(u => u.Id == userId);
+			bool exists = await _context.UserProfiles.AnyAsync(u => u.UserId == userId.ToString());
 			return exists;
 		}
 
