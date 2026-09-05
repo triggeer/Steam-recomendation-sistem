@@ -98,6 +98,7 @@ namespace WebAppTest.Services
 		}
 
 
+
 		public async Task<UserVectorResponse> FormUserTagVector(string userId)
 		{
 			// проверяем, есть ли уже сформированный вектор

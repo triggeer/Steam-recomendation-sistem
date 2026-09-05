@@ -11,11 +11,13 @@ namespace WebAppTest.Interfaces
 		Task<long> GetOwners(int appId);
 		long GetOwners(SpyGameDto spyDto);
 		Task<int?> GetInitPrice(int appId);
+
 		Task<Dictionary<string, int>> GetTags(int appId);
 		Dictionary<string, int> GetTags(SpyGameDto spyDto);
 		Task<List<string>> GetGenres(int appId);
 		List<string> GetGenres(SteamGameDto steamDto);
-		Task<SteamGameDto> GetSteamData(int appId);
+		Task<SteamGameDto> GetSteamEnData(int appId);
+		Task<SteamGameDto> GetSteamRuData(int appId);
 		Task<int> GetCurrentGameAmount(string userId);
 		//Task<List<OwnedGameDto>> GetUserGamesFromSteamAsync(string userId);
 		//Task<List<UserGameDto>> GetUserGames(string userId);

@@ -172,7 +172,7 @@ namespace WebAppTest.Services
 				await UpdateUserGames(userId, steamGames);
 
 				// ?????????????????
-				await UpdateUserProfile(userId);
+				await UpdateUserProfile(profile);
 
 				await _context.SaveChangesAsync();
 			}
@@ -314,7 +314,6 @@ namespace WebAppTest.Services
 		}
 
 		
-		//}
 		//							"123 (ds3)": {rpg:0.5, sols-like:0.7}
 		public async Task<Dictionary<string, Dictionary<string, double>>> GetGameTagsStrengh(int gameId)
 		{
@@ -463,6 +462,18 @@ namespace WebAppTest.Services
 			if (oldProfile != null )
 			{
 				UserProfile actualProfile = await CreateUserVector(userId);
+				DateTime updatedAt = DateTime.Now;
+				oldProfile?.Update(actualProfile.TagStrength, actualProfile.Length, actualProfile.GameAmount, actualProfile.UpdatedAt);
+				//await _context.SaveChangesAsync();
+			}
+			return;
+		}
+
+		public async Task UpdateUserProfile(UserProfile? oldProfile)
+		{
+			if (oldProfile != null)
+			{
+				UserProfile actualProfile = await CreateUserVector(oldProfile.UserId);
 				DateTime updatedAt = DateTime.Now;
 				oldProfile?.Update(actualProfile.TagStrength, actualProfile.Length, actualProfile.GameAmount, actualProfile.UpdatedAt);
 				//await _context.SaveChangesAsync();

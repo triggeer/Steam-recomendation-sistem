@@ -17,19 +17,22 @@ namespace WebAppTest.Services
 		private readonly IConfiguration _configuration;
 		private readonly IDataGainService _dataGainService;
 		private readonly ICreateService _createService;
+		private readonly IDBService _dbservice;
 
 		public SteamService(
 			HttpClient httpClient,
 			IConfiguration configuration,
 			AppDbContext context,
 			IDataGainService dataGainService,
-			ICreateService createService)
+			ICreateService createService,
+			IDBService dbservice)
 		{
 			_httpClient = httpClient;
 			_configuration = configuration;
 			_context = context;
 			_dataGainService = dataGainService;
 			_createService = createService;
+			_dbservice = dbservice;
 		}
 
 		public async Task<GameResponse?> GetGame(int appId)
@@ -74,45 +77,56 @@ namespace WebAppTest.Services
 								.ToListAsync();
 		}
 
-		/* метод async потаму-что надо ждать, а Task значит выполнение работы метода без возврата чего либо
-												+ Task а не void т.к. Task можно await
-		*/
 		public async Task<bool> ImportGameAsync(int appId)
 		{
 			bool exitsts = await _dataGainService.CheckGameExistense(appId);
 			if (!exitsts)
 			{
-				// эндпоинт стима
-				SteamGameDto steamDto = await _dataGainService.GetSteamData(appId);
-				if (steamDto != null)
-				{
-					// эндпоинт спайа
-					SpyGameDto spyDto = await _dataGainService.GetSpyData(appId);
+				try
+				{ 
+					SteamGameDto steamDto = await _dataGainService.GetSteamRuData(appId);
+					if (steamDto == null)
+					{
+						steamDto = await _dataGainService.GetSteamEnData(appId);
+					}
+					if (steamDto != null)
+					{
+						SpyGameDto spyDto = await _dataGainService.GetSpyData(appId);
 
-					Dictionary<string, int> tags = _dataGainService.GetTags(spyDto);
+						Dictionary<string, int> tags = _dataGainService.GetTags(spyDto);
 
-					// эндпоинт стима на отзывы
-					(double userScore, int reviewAmount) = await _dataGainService.GetUserScore(appId);
+						(double userScore, int reviewAmount) = await _dataGainService.GetUserScore(appId);
 
-					long owners = _dataGainService.GetOwners(spyDto);
+						long owners = _dataGainService.GetOwners(spyDto);
 
-					int? initialPrice = steamDto.Price.Initial;
+						PriceData price = await _dbservice.GetGamePrice(steamDto.SteamAppId);
 
-					int? finalPrice = steamDto.Price.Final;
+						int? initialPrice = price.InitialPrice ?? -1;
 
-					double vectorLength = 0;
+						int? finalPrice = price.FinalPrice ?? -1;
 
-					List<string> genres = _dataGainService.GetGenres(steamDto);
+						string? currency = price.Currency;
 
-					Game game = await _createService.GameCreate(
-					appId, steamDto.Name, steamDto.ImgUrl, steamDto.DetailedDescription,
-					userScore, reviewAmount, owners,
-					steamDto.Price.Initial, steamDto.Price.Final, vectorLength, genres, tags);
+						double vectorLength = 0;
 
-					await _createService.AddGame(game);
-					return true;
+						List<string> genres = _dataGainService.GetGenres(steamDto);
+
+						Game game = await _createService.GameCreate(
+						appId, steamDto.Name, steamDto.ImgUrl, steamDto.DetailedDescription,
+						userScore, reviewAmount, owners,
+						initialPrice, finalPrice, currency, vectorLength, genres, tags);
+
+						await _context.Games.AddAsync(game);
+						await _context.SaveChangesAsync();
+						return true;
+					}
+					else return false; 
 				}
-				else return false;
+				catch
+				{
+					Console.WriteLine("Не удалось импортировать игру");
+					return false;	
+				}
 			}
 			else return false;
 		}

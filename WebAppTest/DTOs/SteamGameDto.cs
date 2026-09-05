@@ -17,10 +17,10 @@ namespace WebAppTest.DTOs
 		public string DetailedDescription { get; set; }
 		
 		[JsonPropertyName("header_image")]
-		public string ImgUrl { get; set; }
+		public string? ImgUrl { get; set; }
 
 		[JsonPropertyName("price_overview")]
-		public PriceOverview Price {  get; set; }
+		public PriceOverview? Price {  get; set; }
 	}
 }
 //"price_overview": {

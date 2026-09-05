@@ -137,10 +137,8 @@ namespace WebAppTest.Services
 			return owners;
 		}
 
-		public async Task<SteamGameDto> GetSteamData(int appId)
+		public async Task<SteamGameDto> GetSteamData(int appId, string steamUrl)
 		{
-			var steamUrl = $"https://store.steampowered.com/api/appdetails?appids={appId}&cc=ru&l=russian";
-
 			var steamResponse = await _httpClient.GetAsync(steamUrl);
 
 			steamResponse.EnsureSuccessStatusCode();
@@ -168,9 +166,33 @@ namespace WebAppTest.Services
 			return steamDto;
 		}
 
+		public async Task<SteamGameDto> GetSteamEnData(int appId)
+		{
+			var steamGameData = new SteamGameDto();
+			string steamUrl = $"https://store.steampowered.com/api/appdetails?appids={appId}";
+			steamGameData = await GetSteamData(appId, steamUrl);
+			return steamGameData;
+		}
+
+		public async Task<SteamGameDto> GetSteamRuData(int appId)
+		{
+			var steamGameData = new SteamGameDto();
+			string steamUrl = $"https://store.steampowered.com/api/appdetails?appids={appId}&cc=ru&l=russian";
+			steamGameData = await GetSteamData(appId, steamUrl);
+			return steamGameData;
+		}
+
+		//public async Task<SteamGameDto> GetSpyEnData(int appId)
+		//{
+		//	var steamGameData = new SteamGameDto();
+		//	string steamUrl = $"https://store.steampowered.com/api/appdetails?appids={appId}";
+		//	steamGameData = await GetSteamData(appId, steamUrl);
+		//	return steamGameData;
+		//}
+
 		public async Task<List<string>> GetGenres(int appId)
 		{
-			var steamDto = await GetSteamData(appId);
+			var steamDto = await GetSteamRuData(appId);
 			return GetGenres(steamDto);
 		}
 

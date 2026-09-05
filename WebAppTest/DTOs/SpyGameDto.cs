@@ -11,9 +11,13 @@ namespace WebAppTest.DTOs
 		[JsonPropertyName("tags")]
 		public JsonElement Tags { get; set; }
 
+		[JsonPropertyName("price")]
+		[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+		public int FinalPrice { get; set; } = -1;
+
 		[JsonPropertyName("initialprice")]
 		[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
-		public int InitialPrice { get; set; }
+		public int InitialPrice { get; set; } = -1;
 		
 		[JsonPropertyName("positive")]
 		[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]

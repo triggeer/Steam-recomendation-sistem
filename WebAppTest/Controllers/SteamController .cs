@@ -97,7 +97,7 @@ namespace WebAppTest.Controllers
 		{
 			await _dbService.UpdateAllGamePrice();
 			await _context.SaveChangesAsync();
-			return RedirectToPage("/Home/Index");
+			return RedirectToAction("Index", "Home");
 		}
 
 		[HttpPost]

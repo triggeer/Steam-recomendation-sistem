@@ -2,6 +2,7 @@
 using WebAppTest.Data;
 using WebAppTest.DTOs;
 using WebAppTest.Interfaces;
+using WebAppTest.Migrations;
 using WebAppTest.Models;
 
 namespace WebAppTest.Services
@@ -12,29 +13,30 @@ namespace WebAppTest.Services
 		private readonly HttpClient _httpClient;
 		private readonly IConfiguration _configuration;
 		private readonly IDataGainService _dataGainService;
-		//private readonly ICreateService _createService;
-		//private readonly ISteamService _steamService;
 
 		public DBService(
 			HttpClient httpClient,
 			IConfiguration configuration,
 			AppDbContext context,
-			IDataGainService dataGainService,
-			ISteamService steamService,
-			ICreateService createService)
+			IDataGainService dataGainService
+			)
 		{
 			_httpClient = httpClient;
 			_configuration = configuration;
 			_context = context;
 			_dataGainService = dataGainService;
-			//_steamService = steamService;
-			//_createService = createService;
 		}
 
 
 		public async Task UpdateAllGamePrice()
 		{
-			List<int> appIds = await _context.Games.Select(x => x.Id).ToListAsync();
+			//				.Where(g => g.FinalPrice == -1 || g.FinalPrice == null || g.FinalPrice == 0)
+			List<int> appIds = await _context.Games
+
+				.OrderBy(i => i.Id)
+				.Select(x => x.Id)
+				.ToListAsync();
+
 			int count = 0;
 			foreach (var appId in appIds)
 			{
@@ -52,15 +54,55 @@ namespace WebAppTest.Services
 		{
 			Game dbGame = await _context.Games.FirstOrDefaultAsync(g => g.Id == appId);
 
-			SteamGameDto freshData = await _dataGainService.GetSteamData(dbGame.SteamAppId);
-			if (freshData != null)
+			var freshData = new PriceData();
+
+			try
 			{
-				if (freshData.Price == null)
-					dbGame.UpdateFinalPrice(0);
-				else
-					dbGame.UpdateFinalPrice(freshData.Price.Final);
+				freshData = await GetGamePrice(dbGame.SteamAppId);
 			}
+
+			catch
+			{
+				Console.WriteLine("Не удалось получить цену");
+			}
+
+			dbGame.UpdatePriceData(freshData);
 		}
+
+		public async Task<PriceData> GetGamePrice(int steamId)
+		{
+			var priceData = new PriceData();
+			SteamGameDto steamData = await _dataGainService.GetSteamRuData(steamId);
+			if (steamData != null && steamData.Price != null)
+			{
+				priceData.InitialPrice = steamData.Price.Initial;
+				priceData.FinalPrice = steamData.Price.Final;
+				priceData.Currency = "RUB";
+				return priceData;
+			}
+			
+			steamData = await _dataGainService.GetSteamEnData(steamId);
+			if (steamData != null && steamData.Price != null)
+			{
+				priceData.InitialPrice = steamData.Price.Initial;
+				priceData.FinalPrice = steamData.Price.Final;
+				priceData.Currency = "USD";
+				return priceData;
+			}
+
+			SpyGameDto spyData = await _dataGainService.GetSpyData(steamId);
+			if (spyData != null)
+			{
+				priceData.InitialPrice = spyData.InitialPrice;
+				priceData.FinalPrice = spyData.FinalPrice;
+				priceData.Currency = "USD";
+				return priceData;
+			}
+
+			return new PriceData { FinalPrice = -1 };
+			
+		}
+
 
 		public async Task UpdateAllImgAsync()
 		{
@@ -72,12 +114,13 @@ namespace WebAppTest.Services
 			}
 		}
 
+
 		public async Task UpdateImgAsync(int appId)
 		{
 			Game dbGame = await _context.Games.FirstOrDefaultAsync(g => g.Id == appId);
 			if (string.IsNullOrEmpty(dbGame.ImgUrl))
 			{
-				SteamGameDto freshData = await _dataGainService.GetSteamData(dbGame.SteamAppId);
+				SteamGameDto freshData = await _dataGainService.GetSteamRuData(dbGame.SteamAppId);
 				if (freshData != null)
 				{
 					dbGame.UpdateImageUrl(freshData.ImgUrl);
@@ -85,6 +128,7 @@ namespace WebAppTest.Services
 				await _context.SaveChangesAsync();
 			}
 		}
+		
 
 	}
 }

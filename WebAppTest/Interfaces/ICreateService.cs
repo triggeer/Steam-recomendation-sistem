@@ -14,6 +14,7 @@ namespace WebAppTest.Interfaces
 		long owners,
 		int? initialPrice,
 		int? finalPrice,
+		string? currency,
 		double vectorLength,
 		List<string> genres, 
 		Dictionary<string, int> tags);
