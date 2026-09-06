@@ -2,7 +2,6 @@
 {
 	public class RecommendationCandidate
 	{
-		// Id Steam
 		public int Id { get; set; }
 		public RecommendationDto Game { get; init; }
 		public double UserScore { get; set; }

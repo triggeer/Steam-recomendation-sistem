@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using WebAppTest.Data;
 using WebAppTest.DTOs;
 using WebAppTest.Interfaces;
+using WebAppTest.Migrations;
 using WebAppTest.Models;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -71,11 +72,20 @@ namespace WebAppTest.Services
 
 		public async Task<List<UserGameDto>> GetUserGames(string userId)
 		{
+
+
+
+
 			// получили спсиок (id STEAM, часы)
 			List<OwnedGameDto> list = await GetActualUserGames(userId);
+			// ошибка, если профиль скрыт 
 
 			// получаем только список id (все игры(id) пользователя)
 			List<int> idList = list.Select(x => x.AppId).ToList();
+
+
+
+
 
 			// возвращаем список игр по id (которые сейчас есть в БД)
 			List<Game> dbGames = await _steamService.GetGameList(idList);
@@ -142,24 +152,12 @@ namespace WebAppTest.Services
 			return games;
 		}
 
-		
 
-		public async Task<List<OwnedGameDto>?> GetUserOwnedGamesAsync(string userId)
-		{
-			List<OwnedGameDto> userGameIds = await _context.UserGames
-				.Where (u => u.UserId == userId)
-				.Select(g => new OwnedGameDto 
-				{ 
-					AppId = g.GameId,
-					PlayTime = g.PlayTime
-				})
-				.ToListAsync();
-
-			return userGameIds;
-		}
-
+		/// <returns>список id игр и наигранного времени, не сохраняя данные в БД</returns>
 		public async Task<List<OwnedGameDto>?> GetActualUserGames(string userId)
 		{
+			var gameData = new List<OwnedGameDto>();
+
 			var profile = await _context.UserProfiles
 				.FirstOrDefaultAsync(x => x.UserId == userId);
 
@@ -167,17 +165,17 @@ namespace WebAppTest.Services
 
 			if (profile == null || profile.UpdatedAt <= weekAgo)
 			{
-				var steamGames = await GetUserGamesFromSteamAsync(userId);
-
-				await UpdateUserGames(userId, steamGames);
-
-				// ?????????????????
-				await UpdateUserProfile(profile);
-
-				await _context.SaveChangesAsync();
+				gameData = await GetUserGamesFromSteamAsync(userId);
+			}
+			else
+			{
+				gameData = await _context.UserGames
+								.Where(x => x.UserId == userId)
+								.Select(g => new OwnedGameDto() { AppId = g.GameId, PlayTime = g.PlayTime })
+								.ToListAsync();
 			}
 
-			return await GetUserOwnedGamesAsync(userId);
+			return gameData;
 		}
 
 		public async Task UpdateUserGames(string userId, List<OwnedGameDto> actualGames)
@@ -205,6 +203,9 @@ namespace WebAppTest.Services
 					));
 				}
 			}
+
+			await _context.SaveChangesAsync();
+
 			var actualIds = actualGames
 				.Select(x => x.AppId)
 				.ToHashSet();
@@ -218,6 +219,11 @@ namespace WebAppTest.Services
 			return;
 		}
 
+		/// <summary>
+		/// Получает список игр пользователя и формирует на его основе словарь тегов с их весом и числом вхождений
+		/// </summary>
+		/// <param name="userId"></param>
+		/// <returns></returns>
 		public async Task<Dictionary<int, Dictionary<string, double>>> GetUserGameTags(string userId)
 		{               // RPG: {weight: 100, enterence: 3}
 			int counter = 0;
@@ -407,7 +413,12 @@ namespace WebAppTest.Services
 		}
 
 
-		public async Task<UserProfile> CreateUserVector(string userId)
+		/// <summary>
+		/// Создаёт профиль пользователя с вектором тегов, длинной вектора, числом игр и датой обновления
+		/// </summary>
+		/// <param name="userId"></param>
+		/// <returns></returns>
+		public async Task<UserProfile> CreateUserProfile(string userId)
 		{
 			/*
 		 	 * U = {
@@ -419,6 +430,11 @@ namespace WebAppTest.Services
 					PvP: 0.05
 				}
 		 	 */
+
+			var userGames = await GetActualUserGames(userId);
+
+			await UpdateUserGames(userId, userGames);
+
 			Dictionary<int, Dictionary<string, double>> tags = await GetUserGameTags(userId);
 
 			Dictionary<int, double> userTags = new();
@@ -439,6 +455,7 @@ namespace WebAppTest.Services
 			return userProfile;
 		}
 
+
 		public async Task AddUserTagVector(string userId)
 		{/*
 		 	 * U = {
@@ -450,7 +467,7 @@ namespace WebAppTest.Services
 					PvP: 0.05
 				}
 		 	 */
-			UserProfile userProfile = await CreateUserVector(userId);
+			UserProfile userProfile = await CreateUserProfile(userId);
 
 			_context.UserProfiles.Add(userProfile);
 			await _context.SaveChangesAsync();
@@ -461,10 +478,7 @@ namespace WebAppTest.Services
 			UserProfile? oldProfile = await _context.UserProfiles.FirstOrDefaultAsync(v => v.UserId == userId);
 			if (oldProfile != null )
 			{
-				UserProfile actualProfile = await CreateUserVector(userId);
-				DateTime updatedAt = DateTime.Now;
-				oldProfile?.Update(actualProfile.TagStrength, actualProfile.Length, actualProfile.GameAmount, actualProfile.UpdatedAt);
-				//await _context.SaveChangesAsync();
+				await UpdateUserProfile(oldProfile);
 			}
 			return;
 		}
@@ -473,7 +487,7 @@ namespace WebAppTest.Services
 		{
 			if (oldProfile != null)
 			{
-				UserProfile actualProfile = await CreateUserVector(oldProfile.UserId);
+				UserProfile actualProfile = await CreateUserProfile(oldProfile.UserId);
 				DateTime updatedAt = DateTime.Now;
 				oldProfile?.Update(actualProfile.TagStrength, actualProfile.Length, actualProfile.GameAmount, actualProfile.UpdatedAt);
 				//await _context.SaveChangesAsync();

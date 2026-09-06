@@ -71,7 +71,7 @@ namespace WebAppTest.Controllers
 		[HttpGet]
 		public async Task<IActionResult> Get100ID()
 		{
-			List<int> ids = await _importService.Get100Games();
+			List<int> ids = await _importService.GetNewGames();
 			ViewBag.MyMessage = ids;
 			await _importService.Import100Games(ids);
 			//return RedirectToAction("Index");

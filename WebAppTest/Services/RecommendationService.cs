@@ -39,11 +39,20 @@ namespace WebAppTest.Services
 			_createService = createService;
 		}
 
-		public double CosSimilarity(
-			Dictionary<int, double> firstGameTags, 
+		/// <summary>
+		/// Высчитывает коссинусное сходствео между 2-я векторами тего игр.
+		/// В нашем случае коссинусное сходствео — метрика, отражащая схожесть тегов 2-х игр.
+		/// Принимает значения
+		/// </summary>
+		/// <param name="firstGameTags"></param>
+		/// <param name="secondGameTags"></param>
+		/// <param name="fristVectorLen"></param>
+		/// <param name="secondVectorLen"></param>
+		/// <returns></returns>
+		public double CosSimilarity
+		(	Dictionary<int, double> firstGameTags, 
 			Dictionary<int, double> secondGameTags,
-			double fristVectorLen, double secondVectorLen
-		)
+			double fristVectorLen, double secondVectorLen)
 		{
 			double scalar = 0;
 
@@ -103,7 +112,7 @@ namespace WebAppTest.Services
 		{
 			// проверяем, есть ли уже сформированный вектор
 			bool exists = await _dataGainService.ChekUserTagVectorExistense(userId);
-			
+
 			// если нет - добавляем
 			if (!exists)
 			{
@@ -115,7 +124,7 @@ namespace WebAppTest.Services
 			// берем инфу из бд
 			UserVectorResponse vector = await _userService.GetUserVector(userId);
 
-			
+
 			if (vector.GameAmount != gameAmount || (currentDate - vector.UpdatedAt) > TimeSpan.FromDays(7))
 			{
 
@@ -124,15 +133,33 @@ namespace WebAppTest.Services
 			}
 
 
-			return vector; // гуд
+			return vector;
 		}
 
-		private async Task<Dictionary<int, double>> FormUserTagsDict(string userId)
+		public async Task<Dictionary<int, double>> GetUserTagVector(string userId)
 		{
-			UserVectorResponse userVector = await FormUserTagVector(userId);
-			Dictionary<int, double> userTags = userVector.TagStrength;
-			return userTags;
+			UserProfile? userProfile = await _context.UserProfiles
+					.FirstOrDefaultAsync(x => x.UserId == userId);
+
+			DateTime currentDate = DateTime.Now;
+
+			if (userProfile == null) 
+			{
+				userProfile = await _userService.CreateUserProfile(userId);
+			}
+			else if ((currentDate - userProfile.UpdatedAt) > TimeSpan.FromDays(7))
+			{
+				await _userService.UpdateUserProfile(userProfile);
+			}
+			return userProfile.TagStrength;
 		}
+
+		//private async Task<Dictionary<int, double>> FormUserTagsDict(string userId)
+		//{
+		//	UserVectorResponse userVector = await FormUserTagVector(userId);
+		//	Dictionary<int, double> userTags = userVector.TagStrength;
+		//	return userTags;
+		//}
 
 		public async Task<List<RecommendationDto>> FormRecommendationListAsync(string userId)
 		{
@@ -328,12 +355,20 @@ namespace WebAppTest.Services
 		private async Task<List<RecommendationCandidate>> FormUnsortedRecommendationList(string userId)
 		{
 			var list = new List<RecommendationCandidate>();
-			
-			Dictionary<int, double> userTags = await FormUserTagsDict(userId);
-			
+
+			// ??
+			//Dictionary<int, double> userTags = await FormUserTagsDict(userId);
+
+			Dictionary<int, double> userTags = await GetUserTagVector(userId);
+			 
 			var userProfile = await _context.UserProfiles.FirstOrDefaultAsync(x => x.UserId == userId);
-			
-			double userTagLen = userProfile.Length;
+			if (userProfile == null)
+			{
+				userProfile = await _userService.CreateUserProfile(userId);
+				await _context.UserProfiles.AddAsync(userProfile);
+				await _context.SaveChangesAsync();
+			}
+			double userTagLen = userProfile.Length; 
 
 			///
 			List<OwnedGameDto> userGames = await _userService.GetActualUserGames(userId);
@@ -441,44 +476,6 @@ namespace WebAppTest.Services
 			else return emptyList;
 		}
 
-		/// <summary>
-		/// Вытягивает из БД все уже сформированные списки пользователя 
-		/// </summary>
-		/// <returns>
-		/// Словарь с id пользователя в качестве ключа 
-		/// и списка id всех сформированных списков рекомендаций как значение</returns>
-		//public async Task<Dictionary<int, List<int>>> CollectFormedList(string userId)
-		//{
-		//	var listOfLists = new Dictionary<int, List<int>>();	
-
-		//	List<int> userListsIds = await _context.UserLists
-		//		.Where(u => u.UserId == userId)
-		//		.Select(l => l.ListId)
-		//		.ToListAsync();
-
-		//	foreach (var listId in userListsIds)
-		//	{
-		//		List<int> gamesIds = await _context.ListGames
-		//			.Where(x => x.ListId == listId)
-		//			.OrderBy(g => g.GamePosition)
-		//			.Select(i => i.GameId)
-		//			.ToListAsync();
-
-		//		listOfLists.Add(listId, gamesIds);
-		//	}
-
-		//	return listOfLists;
-		//}
-
-		/// <summary>
-		// var game = await _context.Games
-				//.Include(gt => gt.GameTags)
-				//		.ThenInclude(t => t.Tag)
-				//.FirstOrDefaultAsync(x => x.Id == chosenId);
-
-		/// </summary>
-		/// <param name="userId"></param>
-		/// <returns></returns>
 		public async Task<List<PrevListDto>> CollectFormedList(string userId)
 		{
 			List<PrevListDto> listOfLists = new();
@@ -492,14 +489,16 @@ namespace WebAppTest.Services
 			{
 				//PrevListDto prevList = new PrevListDto();	
 
-				List<int> gamesIds = await _context.ListGames
+				List<ListGame> listGames = await _context.ListGames
 					.Where(x => x.ListId == listId)
 					.OrderBy(g => g.GamePosition)
-					.Select(i => i.GameId)
 					.ToListAsync();
 
+				List<int> idList = listGames.Select(x => x.GameId).ToList();
+
+
 				List<GamePreviewDto> gameDetails = await _context.Games
-					.Where(x => gamesIds.Contains(x.Id))
+					.Where(x => idList.Contains(x.Id))
 					.Select(g  => new GamePreviewDto
 					{
 						Id = g.Id,
@@ -507,14 +506,16 @@ namespace WebAppTest.Services
 						ImgUrl = g.ImgUrl
 					})
 					.ToListAsync();
-				
+
+				Dictionary<int, int> positions = listGames.ToDictionary(x => x.GameId, x => x.GamePosition);
+
+				gameDetails = gameDetails.OrderBy(g => positions[g.Id]).ToList();
+
 				var prevList = new PrevListDto() 
 					{ 
 						Id = listId, 
 						Games = gameDetails
 					};
-				//prevList.Id = listId;
-				//prevList.Games = gameDetails;
 
 				listOfLists.Add(prevList);
 			}

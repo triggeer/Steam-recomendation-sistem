@@ -13,10 +13,3 @@ namespace WebAppTest.DTOs
 
 	}
 }
-//"price_overview": {
-//	"currency": "RUB",
-//        "initial": 429900,
-//        "final": 343900,
-//        "discount_percent": 20,
-//        "initial_formatted": "4299 руб.",
-//        "final_formatted": "3439 руб.

@@ -13,7 +13,7 @@ namespace WebAppTest.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20260616205927_UserProfile")]
-    partial class UserProfile
+    partial class UserProfileCreated
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
