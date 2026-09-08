@@ -110,47 +110,6 @@ namespace WebAppTest.Controllers
 		}
 
 
-		//[HttpGet]
-		//public async Task<IActionResult> ShowPreviousLists(string userLink)
-		//{
-		//	string userId = await _userService.TransformLinkToId(userLink);
-
-		//	Dictionary<int, List<int>> prevLists = await _recommendationService.CollectFormedList(userId);
-
-		//	HttpContext.Session.SetString("Recommendations", JsonSerializer.Serialize(prevLists));
-
-		//	return View(prevLists);
-
-		//}
-
-		//[HttpGet]
-		//public async Task<IActionResult> ShowChosenList(int listId, int index = 0)
-		//{
-		//	string json = HttpContext.Session.GetString("Recommendations");
-
-		//	Dictionary<int, List<int>> lists = JsonSerializer.Deserialize<Dictionary<int, List<int>>>(json);
-
-		//	var chosenList = lists[listId];
-
-		//	var chosenId = chosenList[index];
-
-		//	var game = await _context.Games
-		//		.Include(gt => gt.GameTags)
-		//				.ThenInclude(t => t.Tag)
-		//		.FirstOrDefaultAsync(x => x.Id == chosenId);
-
-		//	var model = new GameViewModel
-		//	{
-		//		Game = game,
-		//		Index = index,
-		//		ListSize = chosenList.Count,
-		//		ListId = listId
-		//	};
-
-		//	return View("Game", model);
-		//}
-
-
 		[HttpGet]
 		public async Task<IActionResult> ShowPreviousLists(string userLink)
 		{

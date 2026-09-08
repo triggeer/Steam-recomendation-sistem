@@ -100,12 +100,6 @@ namespace WebAppTest.Controllers
 			return RedirectToAction("Index", "Home");
 		}
 
-		[HttpPost]
-		public async Task<IActionResult> GetUserGames(string userId)
-		{
-			var games = await _userService.GetUserGames(userId);
-			return View(games);
-		}
 
 		public async Task<IActionResult> UserGameList()
 		{

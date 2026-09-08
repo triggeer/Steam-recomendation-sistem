@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebAppTest.DTOs;
+using WebAppTest.Models;
 
 namespace WebAppTest.Models
 {
@@ -34,3 +35,14 @@ namespace WebAppTest.Models
 		}
 	}
 }
+//gameData = await GetUserGamesFromSteamAsync(userId);
+//List<UserGame> userGames = new List<UserGame>();
+//foreach (var game in gameData)
+//{
+//	UserGame userGame = new UserGame(userId, game.AppId, game.PlayTime);
+//	userGames.Add(userGame);
+//}
+//await _context.UserGames.AddRangeAsync(userGames);
+//await _context.SaveChangesAsync();
+
+//await UpdateUserProfile(userId);

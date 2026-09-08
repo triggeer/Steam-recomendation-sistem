@@ -198,9 +198,9 @@ namespace WebAppTest.Services
 		public async Task<List<RecommendationDto>> ForUniqueRecomendationsAsync(string userId)
 		{
 			//var list11 = await CollectFormedList(userId);
-			var banList = FormIdBanList(userId);
+			var banList = FormIdBanList(userId); // 889
 			var uniqueList = new List<RecommendationCandidate>();
-			List<RecommendationCandidate> recGames = await FormUnsortedRecommendationList(userId);
+			List<RecommendationCandidate> recGames = await FormUnsortedRecommendationList(userId); // 502
 			List<RecommendationCandidate> sortedCandidates = recGames.OrderByDescending(x => x.UserScore).ToList();
 			sortedCandidates.RemoveAll(game => banList.Contains(game.Id));
 
@@ -223,7 +223,7 @@ namespace WebAppTest.Services
 					x => x.ToDictionary(t => t.TagId, t => t.Strength)
 				);
 
-			Dictionary<int, double> vectorLengths = _context.Games.ToDictionary(x => x.Id, x => x.VectorLength);
+			Dictionary<int, double> vectorLengths = _context.Games.ToDictionary(x => x.Id, x => x.VectorLength); //209
 
 			var chosenGame = new RecommendationCandidate();
 
@@ -290,7 +290,7 @@ namespace WebAppTest.Services
 
 			await AddUserList(sortedList, userId);
 
-			return sortedList;
+			return sortedList; //516
 		}
 
 
@@ -359,7 +359,7 @@ namespace WebAppTest.Services
 			// ??
 			//Dictionary<int, double> userTags = await FormUserTagsDict(userId);
 
-			Dictionary<int, double> userTags = await GetUserTagVector(userId);
+			
 			 
 			var userProfile = await _context.UserProfiles.FirstOrDefaultAsync(x => x.UserId == userId);
 			if (userProfile == null)
@@ -392,6 +392,9 @@ namespace WebAppTest.Services
 				x => x.Key,
 				x => x.ToDictionary(t => t.TagId, t => t.Strength)
 				);
+			
+				
+			Dictionary<int, double> userTags = await GetUserTagVector(userId);
 			
 			foreach (var game in games)
 			{
