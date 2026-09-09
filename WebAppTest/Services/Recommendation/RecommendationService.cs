@@ -12,9 +12,9 @@ using WebAppTest.DTOs;
 using WebAppTest.Interfaces;
 using WebAppTest.Migrations;
 using WebAppTest.Models;
-using WebAppTest.Services;
+using WebAppTest.Services.Recommendation.Models;
 
-namespace WebAppTest.Services
+namespace WebAppTest.Services.Recommendation
 {
 	public class RecommendationService : IRecommendationService
 	{
@@ -44,11 +44,11 @@ namespace WebAppTest.Services
 		/// В нашем случае коссинусное сходствео — метрика, отражащая схожесть тегов 2-х игр.
 		/// Принимает значения
 		/// </summary>
-		/// <param name="firstGameTags"></param>
-		/// <param name="secondGameTags"></param>
+		/// <param name="firstGameTags">словарь с ключем id тега и значением веса тега</param>
+		/// <param name="secondGameTags">словарь с ключем id тега и значением веса тега</param>
 		/// <param name="fristVectorLen"></param>
 		/// <param name="secondVectorLen"></param>
-		/// <returns></returns>
+		/// <returns>Косинусное сходство в пределах от 0 до 1</returns>
 		public double CosSimilarity
 		(	Dictionary<int, double> firstGameTags, 
 			Dictionary<int, double> secondGameTags,
@@ -167,7 +167,14 @@ namespace WebAppTest.Services
 			var list = new List<RecommendationDto>();
 			foreach (var candidate in recommendations)
 			{
-				list.Add(candidate.Game);
+				var reccomendation = new RecommendationDto()
+				{
+					GameId = candidate.Id,
+					GameName = candidate.Name,
+					Score = candidate.Score,
+					GameTags = candidate.GameTags
+				};
+				list.Add(reccomendation);
 			}
 			// сортируем по рейтингу схожести
 			List<RecommendationDto> sortedList = list.OrderByDescending(r => r.Score).ToList();
@@ -198,17 +205,17 @@ namespace WebAppTest.Services
 		public async Task<List<RecommendationDto>> ForUniqueRecomendationsAsync(string userId)
 		{
 			//var list11 = await CollectFormedList(userId);
-			var banList = FormIdBanList(userId); // 889
+			var banList = FormIdBanList(userId);
 			var uniqueList = new List<RecommendationCandidate>();
-			List<RecommendationCandidate> recGames = await FormUnsortedRecommendationList(userId); // 502
-			List<RecommendationCandidate> sortedCandidates = recGames.OrderByDescending(x => x.UserScore).ToList();
+			List<RecommendationCandidate> recGames = await FormUnsortedRecommendationList(userId);
+			List<RecommendationCandidate> sortedCandidates = recGames.OrderByDescending(x => x.Score).ToList();
 			sortedCandidates.RemoveAll(game => banList.Contains(game.Id));
 
 			Dictionary<(int, int), double> similaritys = new();
 
 			//var first = sortedCandidates.FirstOrDefault(x => !banList.Contains(x.Id));
 			var first = sortedCandidates[0];
-			first.FinalScore = first.UserScore;
+			first.FinalScore = first.Score;
 			uniqueList.Add(first);
 			sortedCandidates.Remove(first);
 
@@ -223,7 +230,7 @@ namespace WebAppTest.Services
 					x => x.ToDictionary(t => t.TagId, t => t.Strength)
 				);
 
-			Dictionary<int, double> vectorLengths = _context.Games.ToDictionary(x => x.Id, x => x.VectorLength); //209
+			Dictionary<int, double> vectorLengths = _context.Games.ToDictionary(x => x.Id, x => x.VectorLength);
 
 			var chosenGame = new RecommendationCandidate();
 
@@ -269,7 +276,7 @@ namespace WebAppTest.Services
 					//}
 					//													если очень схоже с хоть одной из-
 					//													-уже выбранных игр то биг штраф
-					candidate.FinalScore = (0.8 * candidate.UserScore) - (0.2 * candidate.MaxSimilarity);
+					candidate.FinalScore = (0.8 * candidate.Score) - (0.2 * candidate.MaxSimilarity);
 
 				}
 
@@ -283,14 +290,20 @@ namespace WebAppTest.Services
 			var list = new List<RecommendationDto>();
 			foreach (var candidate in uniqueList)
 			{
-				candidate.Game.Score = candidate.FinalScore;
-				list.Add(candidate.Game);
+				RecommendationDto recommendation = new RecommendationDto()
+				{
+					GameId = candidate.Id,
+					GameName = candidate.Name,
+					Score = candidate.FinalScore,
+					GameTags = candidate.GameTags
+				};
+				list.Add(recommendation);
 			}
 			var sortedList = list.OrderByDescending(x => x.Score).ToList();
 
 			await AddUserList(sortedList, userId);
 
-			return sortedList; //516
+			return sortedList;
 		}
 
 
@@ -302,7 +315,7 @@ namespace WebAppTest.Services
 			string gameName,
 			double gameVectorLen,
 			int gameReviewAmount,
-			double gameUserScore)
+			double gameRating)
 		{
 			double finalScore = 0;
 			if (gameTagsInfo.TryGetValue(gameId, out Dictionary<int, double> gameTags))
@@ -313,26 +326,16 @@ namespace WebAppTest.Services
 					ELDEN RING NIGHTREIGN: --> 0,5826818525389187 <--- 
 					Valheim: --> 0,5805596998270341 <---
 				*/
-				double rating = CalculateBayesRaiting(gameReviewAmount, gameUserScore);
+				double rating = CalculateBayesRaiting(gameReviewAmount, gameRating);
 
 				finalScore = similarity * rating;
 			}
 
-			RecommendationDto recommendationDto = new RecommendationDto
-			{
-				//GameId = game.SteamAppId,
-				// меняем seam ID на id БД
-				GameId = gameId,
-				GameName = gameName,
-				Score = finalScore,
-				GameTags = gameTags
-			};
-
 			RecommendationCandidate candiadate = new RecommendationCandidate
 			{
-				Id = recommendationDto.GameId,
-				Game = recommendationDto,
-				UserScore = finalScore,
+				Id = gameId,
+				Name = gameName,
+				Score = finalScore,
 				MaxSimilarity = 0,
 				FinalScore = 0
 			};
@@ -355,11 +358,6 @@ namespace WebAppTest.Services
 		private async Task<List<RecommendationCandidate>> FormUnsortedRecommendationList(string userId)
 		{
 			var list = new List<RecommendationCandidate>();
-
-			// ??
-			//Dictionary<int, double> userTags = await FormUserTagsDict(userId);
-
-			
 			 
 			var userProfile = await _context.UserProfiles.FirstOrDefaultAsync(x => x.UserId == userId);
 			if (userProfile == null)
@@ -380,7 +378,7 @@ namespace WebAppTest.Services
 				x.Name, 
 				x.VectorLength, 
 				x.SteamAppId, 
-				x.UserScore, 
+				x.Rating, 
 				x.ReviewAmount}
 				).ToListAsync();
 			
@@ -408,9 +406,9 @@ namespace WebAppTest.Services
 						gameTagsInfo, 
 						game.Id, game.Name,
 						game.VectorLength, game.ReviewAmount,
-						game.UserScore);
+						game.Rating);
 
-					if (recommendation.UserScore > 0)
+					if (recommendation.Score > 0)
 					{
 						list.Add(recommendation);
 					}
@@ -490,8 +488,6 @@ namespace WebAppTest.Services
 
 			foreach (var listId in userListsIds)
 			{
-				//PrevListDto prevList = new PrevListDto();	
-
 				List<ListGame> listGames = await _context.ListGames
 					.Where(x => x.ListId == listId)
 					.OrderBy(g => g.GamePosition)

@@ -61,7 +61,7 @@ namespace WebAppTest.Migrations
                     b.Property<int>("SteamAppId")
                         .HasColumnType("integer");
 
-                    b.Property<double>("UserScore")
+                    b.Property<double>("Rating")
                         .HasColumnType("double precision");
 
                     b.Property<double>("VectorLength")

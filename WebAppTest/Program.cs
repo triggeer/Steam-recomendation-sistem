@@ -4,6 +4,8 @@ using Npgsql;
 using WebAppTest.Data;
 using WebAppTest.Interfaces;
 using WebAppTest.Services;
+using WebAppTest.Services.Recommendation;
+using WebAppTest.Services.User;
 
 
 var builder = WebApplication.CreateBuilder(args);

@@ -16,7 +16,7 @@ namespace WebAppTest.Models
 		public ICollection<GameGenre> GameGenres{ get; private set; }
 		public ICollection<GameTag> GameTags { get; private set; }
 		public string DetailedDescription { get; private set; }
-		public double UserScore { get; private set; }
+		public double Rating { get; private set; }
 		public int ReviewAmount { get; private set; }
 		public long Owners {  get; private set; }
 		public int InitialPrice { get; private set; } = -1;
@@ -35,7 +35,7 @@ namespace WebAppTest.Models
 			GameGenres =  new List<GameGenre>();
 			GameTags = new List<GameTag>();
 			DetailedDescription = detailed_description;
-			UserScore = userScore;
+			Rating = userScore;
 			ReviewAmount = reviewAmount;
 			Owners = owners;
 			InitialPrice = initPrice ?? -1;

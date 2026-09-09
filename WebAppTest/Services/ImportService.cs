@@ -37,7 +37,7 @@ namespace WebAppTest.Services
 			};
 
 			var data = JsonSerializer.Deserialize<
-				Dictionary<string, Spy100Dto>
+				Dictionary<string, SpyGameDto>
 			>(json, options);
 
 			List<int> ids = [];

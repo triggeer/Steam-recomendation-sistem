@@ -1,5 +1,6 @@
 ﻿using WebAppTest.DTOs;
 using WebAppTest.Models;
+using WebAppTest.Services.User;
 
 namespace WebAppTest.Interfaces
 {
@@ -7,7 +8,7 @@ namespace WebAppTest.Interfaces
 	{
 		Task<UserVectorResponse?> GetUserVector(string userId);
 		Task<List<OwnedGameDto>> GetUserGamesFromSteamAsync(string userId);
-		Task<List<UserGameDto>> GetUserGames(string userId, List<OwnedGameDto> ownedGames);
+		Task<List<UserGameData>> GetUserGames(string userId, List<OwnedGameDto> ownedGames);
 		Task<Dictionary<int, Dictionary<string, double>>> GetUserGameTags(string userId, List<OwnedGameDto> ownedGames);
 		Task<Dictionary<string, Dictionary<string, double>>> GetGameTagsStrengh(int gameId);
 		Task<Dictionary<string, double>> GetGameTagsStrengh1(int gameId);

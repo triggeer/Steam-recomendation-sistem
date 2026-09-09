@@ -52,14 +52,14 @@ namespace WebAppTest.Services
 				Name = game.Name,
 				Genres = game.GameGenres.Select(gg => gg.Genre.Name).ToList(),
 
-				Tags = game.GameTags.Select(gt => new SpyTagDto
+				Tags = game.GameTags.Select(gt => new SpyTag
 				{
 					Name = gt.Tag.Name,
 					Weight = gt.Weight
 				})
 				.ToList(),
 				DetailedDescription = game.DetailedDescription,
-				UserScore = game.UserScore,
+				Rating = game.Rating,
 				Owners = game.Owners,
 				InitialPrice = game.InitialPrice
 			};

@@ -20,7 +20,7 @@ namespace WebAppTest.DTOs
 		public string? ImgUrl { get; set; }
 
 		[JsonPropertyName("price_overview")]
-		public PriceOverview? Price {  get; set; }
+		public SteamPriceOverview? Price {  get; set; }
 	}
 }
 //"price_overview": {

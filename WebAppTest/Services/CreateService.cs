@@ -47,20 +47,18 @@ namespace WebAppTest.Services
 
 			foreach (string genreName in genres)
 			{
-				// проверяем, есть ли уже такой жанр в БД (если название жанра в списке genres совпадает с названием в БД)
 				Genre? existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == genreName);
 
-				// если нет, то добавляем в БД
 				if (existingGenre == null)
 				{
 					existingGenre = new Genre(genreName);
 					_context.Genres.Add(existingGenre);
 				}
 				
-				// Добавляем связь игры и жанра
 				game.GameGenres.Add(new GameGenre(game, existingGenre));
 			}
 
+			List<GameTag> tagList = new();
 			foreach (KeyValuePair<string, int> tagPair in tags)
 			{
 				int sum = tags.Values.Sum();	
@@ -80,8 +78,13 @@ namespace WebAppTest.Services
 					_context.Tags.Add(existingTag);
 				}
 
-				game.GameTags.Add(new GameTag(game, existingTag, tagWeight, strength));
+				GameTag tag = new GameTag(game, existingTag, tagWeight, strength);
+				tagList.Add(tag);
+				game.GameTags.Add(tag);
 			}
+
+			double vectorLen = CalculateVectorLen(tagList);
+			game.UpdateVectorLength(vectorLen);
 
 			return game;
 		}
@@ -90,6 +93,26 @@ namespace WebAppTest.Services
 		{
 			_context.Games.Add(game);
 			await _context.SaveChangesAsync();
+		}
+
+		public double CalculateVectorLen(List<GameTag> gameTags)
+		{
+			double length = 0;
+			foreach (var tags in gameTags.GroupBy(x => x.GameId))
+			{
+				int sum = tags.Sum(x => x.Weight);
+
+				if (sum == 0)
+					continue;
+
+				double sqrSum = 0;
+
+				foreach (var tag in tags)
+					sqrSum += tag.Strength * tag.Strength;
+				
+				length = Math.Sqrt(sqrSum);
+			}
+			return length;
 		}
 
 	}

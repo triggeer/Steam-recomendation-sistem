@@ -1,6 +1,8 @@
-﻿namespace WebAppTest.DTOs
+﻿using WebAppTest.DTOs;
+
+namespace WebAppTest.Services.User
 {
-	public class UserGameDto
+	public class UserGameData
 	{
 		public int AppId { get; set; }
 		public int PlayTime { get; set; }

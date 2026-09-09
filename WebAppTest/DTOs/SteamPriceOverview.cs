@@ -2,7 +2,7 @@
 
 namespace WebAppTest.DTOs
 {
-	public class PriceOverview
+	public class SteamPriceOverview
 	{
 		[JsonPropertyName("initial")]
 		public int Initial { get; set; }

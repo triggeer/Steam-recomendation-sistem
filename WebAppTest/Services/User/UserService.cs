@@ -9,7 +9,7 @@ using WebAppTest.Migrations;
 using WebAppTest.Models;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace WebAppTest.Services
+namespace WebAppTest.Services.User
 {
 	public class UserService : IUserService
 	{
@@ -144,17 +144,18 @@ namespace WebAppTest.Services
 
 			// надо id, playtime, tegs
 			//List<UserGameDto> games = await GetUserGames(userId);
-			List<UserGameDto> games = await GetUserGames(userId, ownedGames);
+			List<UserGameData> games = await GetUserGames(userId, ownedGames);
 
 
 			var tags = new Dictionary<int, Dictionary<string, double>>();
-			foreach (UserGameDto game in games)
+			foreach (UserGameData game in games)
 			{
-				//SpyTagDto nonGames = new SpyTagDto { Name = "Utilities" };
-				//if (game.Tags.Any(t => t.Name == "Utilities" || t.Name == "Software"))
-				//{
-				//	continue;
-				//}
+				SpyTag nonGames = new SpyTag { Name = "Utilities" };
+				if (game.Tags.Any(t => t.Name == "Utilities" || t.Name == "Software"))
+				{
+					continue;
+				}
+
 				counter++;
 				int weightConunt = 0;
 
@@ -239,9 +240,9 @@ namespace WebAppTest.Services
 			return tags;
 		}
 
-		public async Task<List<UserGameDto>> GetUserGames(string userId, List<OwnedGameDto> ownedGames)
+		public async Task<List<UserGameData>> GetUserGames(string userId, List<OwnedGameDto> ownedGames)
 		{
-			List<UserGameDto> userGames = new();
+			List<UserGameData> userGames = new();
 
 			// список игр, которые есть у пользователя (id, playtime)
 			//var gameData = _context.UserGames
@@ -292,7 +293,7 @@ namespace WebAppTest.Services
 									.Where(x => userGameData.Keys.Contains(x.GameId))
 									.ToListAsync();
 			
-			List<UserGameDto> list = new List<UserGameDto>();
+			List<UserGameData> list = new List<UserGameData>();
 
 			foreach (var game in userGameData)
 			{
@@ -304,7 +305,7 @@ namespace WebAppTest.Services
 									})
 									.ToList();
 
-				var userGame = new UserGameDto()
+				var userGame = new UserGameData()
 				{ 
 					AppId = game.Key,
 					PlayTime = game.Value,
@@ -339,12 +340,12 @@ namespace WebAppTest.Services
 
 			int counter = 0;
 
-			foreach (SpyTagDto tag in game.Tags)
+			foreach (SpyTag tag in game.Tags)
 			{
 				counter += tag.Weight;
 			}
 
-			foreach (SpyTagDto tag in game.Tags)
+			foreach (SpyTag tag in game.Tags)
 			{
 				if (game.Tags != null)
 				{
@@ -383,18 +384,16 @@ namespace WebAppTest.Services
 
 			int counter = 0;
 
-			foreach (SpyTagDto tag in game.Tags)
+			foreach (SpyTag tag in game.Tags)
 			{
 				counter += tag.Weight;
 			}
 
-			foreach (SpyTagDto tag in game.Tags)
+			foreach (SpyTag tag in game.Tags)
 			{
 				if (game.Tags == null)
 					return new Dictionary<string, double>();
 					
-				
-
 				double tStrengh = (double)tag.Weight / counter;
 				//				 "123 (ds3)":			 {rpg:			0.5,...}	
 				if (vector.TryGetValue(tag.Name, out double currentValue))

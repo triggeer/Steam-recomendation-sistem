@@ -18,7 +18,7 @@ namespace WebAppTest.Migrations
                 defaultValue: 0L);
 
             migrationBuilder.AddColumn<double>(
-                name: "UserScore",
+                name: "Rating",
                 table: "Games",
                 type: "double precision",
                 nullable: false,
@@ -33,7 +33,7 @@ namespace WebAppTest.Migrations
                 table: "Games");
 
             migrationBuilder.DropColumn(
-                name: "UserScore",
+                name: "Rating",
                 table: "Games");
         }
     }
