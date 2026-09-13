@@ -23,17 +23,16 @@ dataSourceBuilder.EnableDynamicJson();
 
 var dataSource = dataSourceBuilder.Build();
 //
-//builder.Services.AddScoped<IDBService, DBService>();
+//builder.Services.AddScoped<IgameService, gameService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpClient<ISteamService, SteamService>();
 builder.Services.AddHttpClient<IImportService, ImportService>();
 builder.Services.AddHttpClient<IDataGainService, DataGainService>();
-builder.Services.AddHttpClient<ICreateService,  CreateService>();
+builder.Services.AddHttpClient<IUserListService, UserListService>();
 builder.Services.AddHttpClient<IUserService, UserService>();
 builder.Services.AddHttpClient<IRecommendationService, RecommendationService>();
-builder.Services.AddHttpClient<IDBService, DBService>();
+builder.Services.AddHttpClient<IGameService, GameService>();
 //builder.Services.AddDbContext<AppDbContext>();
 builder.Services.AddDbContext<AppDbContext>(options =>	options.UseNpgsql(dataSource));
 
@@ -59,7 +58,7 @@ if (!app.Environment.IsDevelopment())
 ////
 //using (var scope = app.Services.CreateScope())
 //{
-//	var myService = scope.ServiceProvider.GetRequiredService<IDBService>();
+//	var myService = scope.ServiceProvider.GetRequiredService<IgameService>();
 //	await myService.UpdateGamesData();
 //}
 

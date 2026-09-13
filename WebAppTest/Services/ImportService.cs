@@ -11,53 +11,43 @@ namespace WebAppTest.Services
 	public class ImportService : IImportService
 	{
 		private readonly HttpClient _httpClient;
-		private readonly ISteamService _steamService;
+		private readonly IGameService _gameService;
+		private readonly IDataGainService _dataGainService;
 
 		public ImportService(
 			HttpClient httpClient,
-			ISteamService steamService)
+			IGameService gameService,
+			IDataGainService dataGainService
+			)
 		{
-			_httpClient = httpClient;
-			_steamService = steamService;
+			_gameService = gameService;
+			_dataGainService = dataGainService;
 		}
 
 
-		public async Task<List<int>> GetNewGames()
+		public async Task ImportNewGames()
 		{
-			string url = "https://steamspy.com/api.php?request=all&page=1";
-			HttpResponseMessage response = await _httpClient.GetAsync(url);
-			
-			response.EnsureSuccessStatusCode();
+			List<int> ids = await _dataGainService.GetNewSpyGameIds();
 
-			string json = await response.Content.ReadAsStringAsync();
-
-			var options = new JsonSerializerOptions
-			{
-				PropertyNameCaseInsensitive = true
-			};
-
-			var data = JsonSerializer.Deserialize<
-				Dictionary<string, SpyGameDto>
-			>(json, options);
-
-			List<int> ids = [];
-			
-			foreach (var game in data.Values)
-			{
-				ids.Add(game.AppId);
-			}
-			
-			return ids;
-		}
-
-		public async Task Import100Games(List<int> ids)
-		{
-			List<int> idToShow= new List<int>();
 			foreach (var id in ids)
-			{
-				idToShow.Add(id);
-				await _steamService.ImportGameAsync(id);
-			}
+				await _gameService.ImportGameAsync(id);
+			
 		}
+
+		public async Task ImportNewGames(List<int> ids)
+		{
+			foreach (var id in ids)
+				await _gameService.ImportGameAsync(id);
+		}
+
+		//public async Task ImportNewGames(List<int> ids)
+		//{
+		//	List<int> idToShow = new List<int>();
+		//	foreach (var id in ids)
+		//	{
+		//		idToShow.Add(id);
+		//		await _gameService.ImportGameAsync(id);
+		//	}
+		//}
 	}
 }

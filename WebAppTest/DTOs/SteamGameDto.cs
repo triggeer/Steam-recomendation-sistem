@@ -10,9 +10,6 @@ namespace WebAppTest.DTOs
 		[JsonPropertyName("name")]
 		public string Name { get; set; } = string.Empty;
 		
-		[JsonPropertyName("genres")]
-		public List<SteamGenreDto> Genres { get; set; }
-		
 		[JsonPropertyName("detailed_description")]
 		public string DetailedDescription { get; set; }
 		

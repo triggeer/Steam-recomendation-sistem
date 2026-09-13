@@ -11,27 +11,24 @@ namespace WebAppTest.Controllers
 	public class SteamController : Controller
 	{
 		private readonly AppDbContext _context;
-		private readonly ISteamService _steamService;
+		private readonly IGameService _gameService;
 		private readonly IImportService _importService;
 		private readonly IDataGainService _dataGainService;
 		private readonly IUserService _userService;
-		private readonly IDBService _dbService;
 
 
 		public SteamController(
 		AppDbContext context,
-		ISteamService steamService, 
 		IImportService importService, 
 		IDataGainService dataGainService,
 		IUserService userService,
-		IDBService dbService)
+		IGameService gameService)
 		{
 			_context = context;
-			_steamService = steamService;
 			_importService = importService;
 			_dataGainService = dataGainService;
 			_userService = userService;
-			_dbService = dbService;
+			_gameService = gameService;
 		}
 
 		[HttpGet]
@@ -46,7 +43,7 @@ namespace WebAppTest.Controllers
 
 		{
 			// ждем ответа от GetGame и возвращаем вид (открываем cshtml) и передаем туда model = game
-			var game = await _steamService.GetGame(appId);
+			var game = await _gameService.GetGame(appId);
 			if (game == null)
 			{
 				return View("NoData");
@@ -63,7 +60,7 @@ namespace WebAppTest.Controllers
 		[HttpPost]
 		public async Task<IActionResult> ImportGame(int appId)
 		{
-			await _steamService.ImportGameAsync(appId);
+			await _gameService.ImportGameAsync(appId);
 			//return View();
 			return RedirectToAction("GameDetails", new {appId});
 		}
@@ -71,16 +68,15 @@ namespace WebAppTest.Controllers
 		[HttpGet]
 		public async Task<IActionResult> Get100ID()
 		{
-			List<int> ids = await _importService.GetNewGames();
+			List<int> ids = await _dataGainService.GetNewSpyGameIds();
 			ViewBag.MyMessage = ids;
-			await _importService.Import100Games(ids);
-			//return RedirectToAction("Index");
+			await _importService.ImportNewGames(ids);
 			return View();
 		}
 
 		public async Task<IActionResult> UpdateData(int appId)
 		{
-			//await _steamService.UpdateGame(appId);
+			//await _gameService.UpdateGame(appId);
 			//return RedirectToAction("GameDetails", new { appId });
 			return View();
 		}
@@ -88,14 +84,14 @@ namespace WebAppTest.Controllers
 		[HttpPost]
 		public async Task<IActionResult> UpdateGame(int appId)
 		{
-			await _dbService.UpdateGamePrice(appId);
+			await _gameService.UpdateGamePrice(appId);
 			await _context.SaveChangesAsync();
 			return RedirectToAction("GameDetails", new { appId });
 		}
 
 		public async Task<IActionResult> UpdateAllGames()
 		{
-			await _dbService.UpdateAllGamePrice();
+			await _gameService.UpdateAllGamePrice();
 			await _context.SaveChangesAsync();
 			return RedirectToAction("Index", "Home");
 		}
@@ -120,7 +116,7 @@ namespace WebAppTest.Controllers
 
 		public async Task<IActionResult> UpdateGamesImg()
 		{
-			await _dbService.UpdateAllImgAsync();
+			await _gameService.UpdateAllImgAsync();
 			return RedirectToPage("/Home/Index");
 		}
 	}

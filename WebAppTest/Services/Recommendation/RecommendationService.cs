@@ -18,25 +18,21 @@ namespace WebAppTest.Services.Recommendation
 {
 	public class RecommendationService : IRecommendationService
 	{
-		private readonly AppDbContext _context;
 		private readonly HttpClient _httpClient;
+		private readonly AppDbContext _context;
 		private readonly IUserService _userService;
-		private readonly IDataGainService _dataGainService;
-		private readonly ICreateService _createService;
+		private readonly IUserListService _userListService;
 		
 		public RecommendationService(
 		AppDbContext context,
 		HttpClient httpClient,
 		IUserService userService,
-		IDataGainService dataGainService,
-		ICreateService createService
+		IUserListService userListService
 		)
 		{
 			_context = context;
-			_httpClient = httpClient;
 			_userService = userService;
-			_dataGainService = dataGainService;
-			_createService = createService;
+			_userListService = userListService;
 		}
 
 		/// <summary>
@@ -108,57 +104,49 @@ namespace WebAppTest.Services.Recommendation
 
 
 
-		public async Task<UserVectorResponse> FormUserTagVector(string userId)
-		{
-			// проверяем, есть ли уже сформированный вектор
-			bool exists = await _dataGainService.ChekUserTagVectorExistense(userId);
-
-			// если нет - добавляем
-			if (!exists)
-			{
-				await _userService.AddUserTagVector(userId);
-			}
-
-			int gameAmount = await _dataGainService.GetCurrentGameAmount(userId);
-			DateTime currentDate = DateTime.Now;
-			// берем инфу из бд
-			UserVectorResponse vector = await _userService.GetUserVector(userId);
-
-
-			if (vector.GameAmount != gameAmount || (currentDate - vector.UpdatedAt) > TimeSpan.FromDays(7))
-			{
-
-				await _userService.UpdateUserProfile(userId);
-				await _context.SaveChangesAsync();
-			}
-
-
-			return vector;
-		}
-
-		public async Task<Dictionary<int, double>> GetUserTagVector(string userId)
-		{
-			UserProfile? userProfile = await _context.UserProfiles
-					.FirstOrDefaultAsync(x => x.UserId == userId);
-
-			DateTime currentDate = DateTime.Now;
-
-			if (userProfile == null) 
-			{
-				userProfile = await _userService.CreateUserProfile(userId);
-			}
-			else if ((currentDate - userProfile.UpdatedAt) > TimeSpan.FromDays(7))
-			{
-				await _userService.UpdateUserProfile(userProfile);
-			}
-			return userProfile.TagStrength;
-		}
-
-		//private async Task<Dictionary<int, double>> FormUserTagsDict(string userId)
+		//public async Task<UserVectorResponse> FormUserTagVector(string userId)
 		//{
-		//	UserVectorResponse userVector = await FormUserTagVector(userId);
-		//	Dictionary<int, double> userTags = userVector.TagStrength;
-		//	return userTags;
+		//	// проверяем, есть ли уже сформированный вектор
+		//	bool exists = await _dataGainService.ChekUserTagVectorExistense(userId);
+
+		//	// если нет - добавляем
+		//	if (!exists)
+		//	{
+		//		await _userService.AddUserTagVector(userId);
+		//	}
+
+		//	int gameAmount = await _dataGainService.GetCurrentGameAmount(userId);
+		//	DateTime currentDate = DateTime.Now;
+		//	// берем инфу из бд
+		//	UserVectorResponse vector = await _userService.GetUserVector(userId);
+
+
+		//	if (vector.GameAmount != gameAmount || (currentDate - vector.UpdatedAt) > TimeSpan.FromDays(7))
+		//	{
+
+		//		await _userService.UpdateUserProfile(userId);
+		//		await _context.SaveChangesAsync();
+		//	}
+
+		//	return vector;
+		//}
+
+		//public async Task<Dictionary<int, double>> GetUserTagVector(string userId)
+		//{
+		//	UserProfile? userProfile = await _context.UserProfiles
+		//			.FirstOrDefaultAsync(x => x.UserId == userId);
+
+		//	DateTime currentDate = DateTime.Now;
+
+		//	if (userProfile == null) 
+		//	{
+		//		userProfile = await _userService.CreateUserProfile(userId);
+		//	}
+		//	else if ((currentDate - userProfile.UpdatedAt) > TimeSpan.FromDays(7))
+		//	{
+		//		await _userService.UpdateUserProfile(userProfile);
+		//	}
+		//	return userProfile.TagStrength;
 		//}
 
 		public async Task<List<RecommendationDto>> FormRecommendationListAsync(string userId)
@@ -301,7 +289,7 @@ namespace WebAppTest.Services.Recommendation
 			}
 			var sortedList = list.OrderByDescending(x => x.Score).ToList();
 
-			await AddUserList(sortedList, userId);
+			await _userListService.AddUserList(sortedList, userId);
 
 			return sortedList;
 		}
@@ -392,7 +380,7 @@ namespace WebAppTest.Services.Recommendation
 				);
 			
 				
-			Dictionary<int, double> userTags = await GetUserTagVector(userId);
+			Dictionary<int, double> userTags = await _userService.GetUserTagVector(userId);
 			
 			foreach (var game in games)
 			{
@@ -418,38 +406,38 @@ namespace WebAppTest.Services.Recommendation
 			return list;
 		}
 
-		/// <summary>
-		/// Записывает данные сформированного списка рекомендаций в БД
-		/// </summary>
-		/// <param name="recommendedList">Сформированный список рекомендаций</param>
-		/// <returns>Записанные данные о сформированном списке в БД</returns>
-		public async Task AddUserList(List<RecommendationDto> recommendedList, string userId)
-		{
-			DateTime updatedAt = DateTime.Now;
-			RecList recList = new RecList(updatedAt);
+		///// <summary>
+		///// Записывает данные сформированного списка рекомендаций в БД
+		///// </summary>
+		///// <param name="recommendedList">Сформированный список рекомендаций</param>
+		///// <returns>Записанные данные о сформированном списке в БД</returns>
+		//public async Task AddUserList(List<RecommendationDto> recommendedList, string userId)
+		//{
+		//	DateTime updatedAt = DateTime.Now;
+		//	RecList recList = new RecList(updatedAt);
 
-			_context.RecLists.Add(recList);
-			await _context.SaveChangesAsync();
+		//	_context.RecLists.Add(recList);
+		//	await _context.SaveChangesAsync();
 
-			var gamesFromList = new List<ListGame>();
+		//	var gamesFromList = new List<ListGame>();
 
-			int position = 0;
-			foreach (var game in recommendedList)
-			{
-				ListGame listGame = new ListGame(recList.Id, game.GameId, position);
-				position++;
-				gamesFromList.Add(listGame);
-			}
+		//	int position = 0;
+		//	foreach (var game in recommendedList)
+		//	{
+		//		ListGame listGame = new ListGame(recList.Id, game.GameId, position);
+		//		position++;
+		//		gamesFromList.Add(listGame);
+		//	}
 
-			_context.ListGames.AddRange(gamesFromList);
+		//	_context.ListGames.AddRange(gamesFromList);
 
-			var userList = new UserList(userId, recList.Id);
+		//	var userList = new UserList(userId, recList.Id);
 
-			_context.UserLists.Add(userList);
+		//	_context.UserLists.Add(userList);
 
-			await _context.SaveChangesAsync();
+		//	await _context.SaveChangesAsync();
 
-		}
+		//}
 
 		/// <summary>
 		/// Формирует HashSet с id игр, которые уже были в сформированных списках рекомендаций

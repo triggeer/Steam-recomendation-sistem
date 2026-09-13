@@ -7,30 +7,26 @@ using WebAppTest.DTOs;
 using WebAppTest.Interfaces;
 using WebAppTest.Migrations;
 using WebAppTest.Models;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WebAppTest.Services.User
 {
 	public class UserService : IUserService
 	{
-		private readonly AppDbContext _context;
 		private readonly HttpClient _httpClient;
-		private readonly ISteamService _steamService;
+		private readonly AppDbContext _context;
 		private readonly IDataGainService _dataGainService;
-		private readonly IConfiguration _configuration;
+		private readonly IGameService _gameService;
 
 		public UserService(
+		HttpClient httpClient,
 		AppDbContext context, 
-		HttpClient httpClient, 
-		ISteamService steamService, 
 		IDataGainService dataGainService,
-		IConfiguration configuration)
+		IGameService gameService
+		)
 		{
 			_context = context;
-			_httpClient = httpClient;
-			_steamService = steamService;
 			_dataGainService = dataGainService;
-			_configuration = configuration;
+			_gameService = gameService;
 		}
 
 		public async Task<UserVectorResponse?> GetUserVector(string userId)
@@ -47,26 +43,6 @@ namespace WebAppTest.Services.User
 			return vector;
 		}
 
-		public async Task<List<OwnedGameDto>> GetUserGamesFromSteamAsync(string userId)
-		{ 
-			var apiKey = _configuration.GetValue<string>("Steam:ApiKey");
-			var url = $"https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={apiKey}&steamid={userId}&format=json";
-
-			var userGameList = new List<Game>();
-
-			var steamResponse = await _httpClient.GetAsync(url);
-			steamResponse.EnsureSuccessStatusCode();
-
-			var steamJson = await steamResponse.Content.ReadAsStringAsync();
-			var steamData = JsonSerializer.Deserialize<
-			Dictionary<string, UserGamesResponse>
-			>(steamJson);
-
-			List<OwnedGameDto> ownedGames = steamData["response"].games;
-
-			return ownedGames; // (id, часы)
-		}
-
 		/// <returns>список id игр и наигранного времени, не сохраняя данные в БД</returns>
 		public async Task<List<OwnedGameDto>?> GetActualUserGames(string userId)
 		{
@@ -79,7 +55,7 @@ namespace WebAppTest.Services.User
 
 			if (profile == null || profile.UpdatedAt <= weekAgo)
 			{
-				gameData = await GetUserGamesFromSteamAsync(userId);
+				gameData = await _dataGainService.GetUserGamesFromSteamAsync(userId);
 			}
 			else
 			{
@@ -267,7 +243,7 @@ namespace WebAppTest.Services.User
 			foreach (var id in missingIds)
 			{
 				// добавляем игру с таким id
-				await _steamService.ImportGameAsync(id);
+				await _gameService.ImportGameAsync(id);
 			}
 			
 			if (missingIds.Any())
@@ -322,15 +298,15 @@ namespace WebAppTest.Services.User
 		//							"123 (ds3)": {rpg:0.5, sols-like:0.7}
 		public async Task<Dictionary<string, Dictionary<string, double>>> GetGameTagsStrengh(int gameId)
 		{
-			bool exists = await _dataGainService.CheckGameExistense(gameId);
+			bool exists = await _context.Games.AnyAsync(g => g.SteamAppId == gameId);
 
 			
 			if (!exists)
 			{
-				await _steamService.ImportGameAsync(gameId);
+				await _gameService.ImportGameAsync(gameId);
 			}
 
-			GameResponse game = await _steamService.GetGame(gameId);
+			GameResponse game = await _gameService.GetGame(gameId);
 
 			if (game == null)
 			{
@@ -365,49 +341,49 @@ namespace WebAppTest.Services.User
 			return vector;
 		}
 
-		public async Task<Dictionary<string, double>> GetGameTagsStrengh1(int gameId)
-		{
-			bool exists = await _dataGainService.CheckGameExistense(gameId);
+		//public async Task<Dictionary<string, double>> GetGameTagsStrengh1(int gameId)
+		//{
+		//	bool exists = await _context.Games.AnyAsync(g => g.SteamAppId == gameId);
 
-			if (!exists)
-			{
-				await _steamService.ImportGameAsync(gameId);
-			}
+		//	if (!exists)
+		//	{
+		//		await _gameService.ImportGameAsync(gameId);
+		//	}
 
-			GameResponse game = await _steamService.GetGame(gameId);
+		//	GameResponse game = await _gameService.GetGame(gameId);
 
-			if (game == null)
-			{
-				return null;
-			}
-			var vector = new Dictionary<string, double>();
+		//	if (game == null)
+		//	{
+		//		return null;
+		//	}
+		//	var vector = new Dictionary<string, double>();
 
-			int counter = 0;
+		//	int counter = 0;
 
-			foreach (SpyTag tag in game.Tags)
-			{
-				counter += tag.Weight;
-			}
+		//	foreach (SpyTag tag in game.Tags)
+		//	{
+		//		counter += tag.Weight;
+		//	}
 
-			foreach (SpyTag tag in game.Tags)
-			{
-				if (game.Tags == null)
-					return new Dictionary<string, double>();
+		//	foreach (SpyTag tag in game.Tags)
+		//	{
+		//		if (game.Tags == null)
+		//			return new Dictionary<string, double>();
 					
-				double tStrengh = (double)tag.Weight / counter;
-				//				 "123 (ds3)":			 {rpg:			0.5,...}	
-				if (vector.TryGetValue(tag.Name, out double currentValue))
-				{
-					vector[tag.Name] = currentValue + tStrengh;
-				}
-				else
-				{//		        "123 (ds3)":	  {rpg:		0.5,...}	
-					vector.Add(tag.Name, tStrengh);
-				}
-			}
+		//		double tStrengh = (double)tag.Weight / counter;
+		//		//				 "123 (ds3)":			 {rpg:			0.5,...}	
+		//		if (vector.TryGetValue(tag.Name, out double currentValue))
+		//		{
+		//			vector[tag.Name] = currentValue + tStrengh;
+		//		}
+		//		else
+		//		{//		        "123 (ds3)":	  {rpg:		0.5,...}	
+		//			vector.Add(tag.Name, tStrengh);
+		//		}
+		//	}
 
-			return vector;
-		}
+		//	return vector;
+		//}
 
 
 		/// <summary>
@@ -495,21 +471,22 @@ namespace WebAppTest.Services.User
 			return;
 		}
 
-		public async Task<string> TransformLinkToId(string userLink)
+		public async Task<Dictionary<int, double>> GetUserTagVector(string userId)
 		{
-			string steamLink = $"{userLink}?xml=1";
+			UserProfile? userProfile = await _context.UserProfiles
+					.FirstOrDefaultAsync(x => x.UserId == userId);
 
-			Stream steamResponse = await _httpClient.GetStreamAsync(steamLink);
-			
-			XDocument xdoc = XDocument.Load(steamResponse);
+			DateTime currentDate = DateTime.Now;
 
-			XElement? root = xdoc.Root;
-
-			Uri uri = new Uri(userLink);
-
-			string userId = root.Element("steamID64").Value;
-
-			return userId;
+			if (userProfile == null)
+			{
+				userProfile = await CreateUserProfile(userId);
+			}
+			else if ((currentDate - userProfile.UpdatedAt) > TimeSpan.FromDays(7))
+			{
+				await UpdateUserProfile(userProfile);
+			}
+			return userProfile.TagStrength;
 		}
 	}
 }

@@ -16,15 +16,21 @@ namespace WebAppTest.Controllers
 		private readonly AppDbContext _context;
 		private readonly IUserService _userService;
 		private readonly IRecommendationService _recommendationService;
+		private readonly IDataGainService _dataGainService;
+		private readonly IUserListService _userListService;
 
 		public RecommendationController(
 		AppDbContext context,
 		IUserService userService,
-		IRecommendationService recommendationService)
+		IRecommendationService recommendationService,
+		IDataGainService dataGainService,
+		IUserListService userListService)
 		{
 			_context = context;
 			_userService = userService;
 			_recommendationService = recommendationService;
+			_dataGainService = dataGainService;
+			_userListService = userListService;
 		}
 
 
@@ -44,7 +50,7 @@ namespace WebAppTest.Controllers
 		[HttpGet]
 		public async Task<IActionResult> FormRecommendationList(string userLink)
 		{
-			string userId = await _userService.TransformLinkToId(userLink);
+			string userId = await _dataGainService.TransformLinkToId(userLink);
 			var cosSimList = await _recommendationService.ForUniqueRecomendationsAsync(userId);
 			return View(cosSimList);
 		}
@@ -66,7 +72,7 @@ namespace WebAppTest.Controllers
 
 		public async Task<IActionResult> ShowRecomendationsInARow(string userLink)
 		{
-			string userId = await _userService.TransformLinkToId(userLink);
+			string userId = await _dataGainService.TransformLinkToId(userLink);
 
 			List<RecommendationDto> recommendations = await _recommendationService.ForUniqueRecomendationsAsync(userId);
 
@@ -113,9 +119,9 @@ namespace WebAppTest.Controllers
 		[HttpGet]
 		public async Task<IActionResult> ShowPreviousLists(string userLink)
 		{
-			string userId = await _userService.TransformLinkToId(userLink);
+			string userId = await _dataGainService.TransformLinkToId(userLink);
 
-			List<PrevListDto> prevLists = await _recommendationService.CollectFormedList(userId);
+			List<PrevListDto> prevLists = await _userListService.CollectFormedList(userId);
 
 			HttpContext.Session.SetString("Recommendations", JsonSerializer.Serialize(prevLists));
 

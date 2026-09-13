@@ -13,7 +13,6 @@ namespace WebAppTest.Models
 		public int SteamAppId { get; init; }
 		public string Name { get; private set; }
 		public string? ImgUrl { get; private set; }
-		public ICollection<GameGenre> GameGenres{ get; private set; }
 		public ICollection<GameTag> GameTags { get; private set; }
 		public string DetailedDescription { get; private set; }
 		public double Rating { get; private set; }
@@ -32,7 +31,6 @@ namespace WebAppTest.Models
 			SteamAppId = steamAppId;
 			Name = name;
 			ImgUrl = imgUrl;
-			GameGenres =  new List<GameGenre>();
 			GameTags = new List<GameTag>();
 			DetailedDescription = detailed_description;
 			Rating = userScore;
