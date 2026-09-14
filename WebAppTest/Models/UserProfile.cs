@@ -4,30 +4,30 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebAppTest.DTOs;
+using WebAppTest.Models;
 
 namespace WebAppTest.Models
 {
 	public class UserProfile
 	{
-		public string Id { get; set; }
+		public string UserId { get; init; }
 		[Column(TypeName = "jsonb")]
-		public Dictionary<int, double> TagStrength { get; set; } = [];
-		public double Length { get; set; }
-		public int GameAmount { get; set; }
-		public DateTime UpdatedAt { get; set; }
+		public Dictionary<int, double> TagStrength { get; private set; } = [];
+		public double Length { get; private set; }
+		public int GameAmount { get; private set; }
+		public DateTime UpdatedAt { get; private set; }
 		private UserProfile() { }
 		public UserProfile(string id, Dictionary<int, double> tagStrength, double length, int gameAmount, DateTime updatedAt)
 		{
-			Id = id;
+			UserId = id;
 			TagStrength = tagStrength;
 			Length = length;
 			GameAmount = gameAmount;
 			UpdatedAt = updatedAt.ToUniversalTime();
 		}
 
-		public void Update(string id, Dictionary<int, double> tagStrength, double length, int gameAmount, DateTime updatedAt)
+		public void Update(Dictionary<int, double> tagStrength, double length, int gameAmount, DateTime updatedAt)
 		{
-			Id = id;
 			TagStrength = tagStrength;
 			Length = length;
 			GameAmount = gameAmount;
@@ -35,42 +35,14 @@ namespace WebAppTest.Models
 		}
 	}
 }
-//[HttpGet]
-//public async Task<IActionResult> ShowPreviousLists(string userLink)
+//gameData = await GetUserGamesFromSteamAsync(userId);
+//List<UserGame> userGames = new List<UserGame>();
+//foreach (var game in gameData)
 //{
-//	string userId = await _userService.TransformLinkToId(userLink);
-
-//	Dictionary<int, List<int>> prevLists = await _recommendationService.CollectFormedList(userId);
-
-//	HttpContext.Session.SetString("Recommendations", JsonSerializer.Serialize(prevLists));
-
-//	return View(prevLists);
-
+//	UserGame userGame = new UserGame(userId, game.AppId, game.PlayTime);
+//	userGames.Add(userGame);
 //}
+//await _context.UserGames.AddRangeAsync(userGames);
+//await _context.SaveChangesAsync();
 
-//[HttpGet]
-//public async Task<IActionResult> ShowChosenList(int listId, int index = 0)
-//{
-//	string json = HttpContext.Session.GetString("Recommendations");
-
-//	Dictionary<int, List<int>> lists = JsonSerializer.Deserialize<Dictionary<int, List<int>>>(json);
-
-//	var chosenList = lists[listId];
-
-//	var chosenId = chosenList[index];
-
-//	var game = await _context.Games
-//		.Include(gt => gt.GameTags)
-//				.ThenInclude(t => t.Tag)
-//		.FirstOrDefaultAsync(x => x.Id == chosenId);
-
-//	var model = new GameViewModel
-//	{
-//		Game = game,
-//		Index = index,
-//		ListSize = chosenList.Count,
-//		ListId = listId
-//	};
-
-//	return View("Game", model);
-//}
+//await UpdateUserProfile(userId);

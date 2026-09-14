@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace WebAppTest.Migrations
 {
     /// <inheritdoc />
-    public partial class UserProfile : Migration
+    public partial class UserProfileCreated : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

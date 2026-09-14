@@ -16,15 +16,24 @@ namespace WebAppTest.Controllers
 		private readonly AppDbContext _context;
 		private readonly IUserService _userService;
 		private readonly IRecommendationService _recommendationService;
+		private readonly IDataGainService _dataGainService;
+		private readonly IUserListService _userListService;
+		private readonly IGameService _gameService;
 
 		public RecommendationController(
 		AppDbContext context,
 		IUserService userService,
-		IRecommendationService recommendationService)
+		IRecommendationService recommendationService,
+		IDataGainService dataGainService,
+		IUserListService userListService,
+		IGameService gameService)
 		{
 			_context = context;
 			_userService = userService;
 			_recommendationService = recommendationService;
+			_dataGainService = dataGainService;
+			_userListService = userListService;
+			_gameService = gameService;
 		}
 
 
@@ -44,7 +53,7 @@ namespace WebAppTest.Controllers
 		[HttpGet]
 		public async Task<IActionResult> FormRecommendationList(string userLink)
 		{
-			string userId = await _userService.TransformLinkToId(userLink);
+			string userId = await _dataGainService.TransformLinkToId(userLink);
 			var cosSimList = await _recommendationService.ForUniqueRecomendationsAsync(userId);
 			return View(cosSimList);
 		}
@@ -60,13 +69,13 @@ namespace WebAppTest.Controllers
 		[HttpGet]
 		public async Task UpdateGameVectors()
 		{
-			await _recommendationService.AddGameVector();
+			await _gameService.AddGameVector();
 		}
 
 
 		public async Task<IActionResult> ShowRecomendationsInARow(string userLink)
 		{
-			string userId = await _userService.TransformLinkToId(userLink);
+			string userId = await _dataGainService.TransformLinkToId(userLink);
 
 			List<RecommendationDto> recommendations = await _recommendationService.ForUniqueRecomendationsAsync(userId);
 
@@ -110,53 +119,12 @@ namespace WebAppTest.Controllers
 		}
 
 
-		//[HttpGet]
-		//public async Task<IActionResult> ShowPreviousLists(string userLink)
-		//{
-		//	string userId = await _userService.TransformLinkToId(userLink);
-
-		//	Dictionary<int, List<int>> prevLists = await _recommendationService.CollectFormedList(userId);
-
-		//	HttpContext.Session.SetString("Recommendations", JsonSerializer.Serialize(prevLists));
-
-		//	return View(prevLists);
-
-		//}
-
-		//[HttpGet]
-		//public async Task<IActionResult> ShowChosenList(int listId, int index = 0)
-		//{
-		//	string json = HttpContext.Session.GetString("Recommendations");
-
-		//	Dictionary<int, List<int>> lists = JsonSerializer.Deserialize<Dictionary<int, List<int>>>(json);
-
-		//	var chosenList = lists[listId];
-
-		//	var chosenId = chosenList[index];
-
-		//	var game = await _context.Games
-		//		.Include(gt => gt.GameTags)
-		//				.ThenInclude(t => t.Tag)
-		//		.FirstOrDefaultAsync(x => x.Id == chosenId);
-
-		//	var model = new GameViewModel
-		//	{
-		//		Game = game,
-		//		Index = index,
-		//		ListSize = chosenList.Count,
-		//		ListId = listId
-		//	};
-
-		//	return View("Game", model);
-		//}
-
-
 		[HttpGet]
 		public async Task<IActionResult> ShowPreviousLists(string userLink)
 		{
-			string userId = await _userService.TransformLinkToId(userLink);
+			string userId = await _dataGainService.TransformLinkToId(userLink);
 
-			List<PrevListDto> prevLists = await _recommendationService.CollectFormedList(userId);
+			List<PrevListDto> prevLists = await _userListService.CollectFormedList(userId);
 
 			HttpContext.Session.SetString("Recommendations", JsonSerializer.Serialize(prevLists));
 

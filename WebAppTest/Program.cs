@@ -4,6 +4,8 @@ using Npgsql;
 using WebAppTest.Data;
 using WebAppTest.Interfaces;
 using WebAppTest.Services;
+using WebAppTest.Services.Recommendation;
+using WebAppTest.Services.User;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,17 +23,17 @@ dataSourceBuilder.EnableDynamicJson();
 
 var dataSource = dataSourceBuilder.Build();
 //
-//builder.Services.AddScoped<IDBService, DBService>();
+//builder.Services.AddScoped<IgameService, gameService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpClient<ISteamService, SteamService>();
-builder.Services.AddHttpClient<IImportService, ImportService>();
+builder.Services.AddScoped<IImportService, ImportService>();
+builder.Services.AddScoped<IUserListService, UserListService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddHttpClient<IDataGainService, DataGainService>();
-builder.Services.AddHttpClient<ICreateService,  CreateService>();
-builder.Services.AddHttpClient<IUserService, UserService>();
-builder.Services.AddHttpClient<IRecommendationService, RecommendationService>();
-builder.Services.AddHttpClient<IDBService, DBService>();
+
 //builder.Services.AddDbContext<AppDbContext>();
 builder.Services.AddDbContext<AppDbContext>(options =>	options.UseNpgsql(dataSource));
 
@@ -57,7 +59,7 @@ if (!app.Environment.IsDevelopment())
 ////
 //using (var scope = app.Services.CreateScope())
 //{
-//	var myService = scope.ServiceProvider.GetRequiredService<IDBService>();
+//	var myService = scope.ServiceProvider.GetRequiredService<IgameService>();
 //	await myService.UpdateGamesData();
 //}
 

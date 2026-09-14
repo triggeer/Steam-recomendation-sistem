@@ -1,32 +1,34 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using WebAppTest.Data;
 using WebAppTest.DTOs;
 using WebAppTest.Interfaces;
-using WebAppTest.Services;
 using WebAppTest.Models;
+using WebAppTest.Services;
 
 namespace WebAppTest.Controllers
 {
 	public class SteamController : Controller
 	{
-		private readonly ISteamService _steamService;
+		private readonly AppDbContext _context;
+		private readonly IGameService _gameService;
 		private readonly IImportService _importService;
 		private readonly IDataGainService _dataGainService;
 		private readonly IUserService _userService;
-		private readonly IDBService _dbService;
 
 
 		public SteamController(
-		ISteamService steamService, 
+		AppDbContext context,
 		IImportService importService, 
 		IDataGainService dataGainService,
 		IUserService userService,
-		IDBService dbService)
+		IGameService gameService)
 		{
-			_steamService = steamService;
+			_context = context;
 			_importService = importService;
 			_dataGainService = dataGainService;
 			_userService = userService;
-			_dbService = dbService;
+			_gameService = gameService;
 		}
 
 		[HttpGet]
@@ -41,7 +43,7 @@ namespace WebAppTest.Controllers
 
 		{
 			// ждем ответа от GetGame и возвращаем вид (открываем cshtml) и передаем туда model = game
-			var game = await _steamService.GetGame(appId);
+			var game = await _gameService.GetGame(appId);
 			if (game == null)
 			{
 				return View("NoData");
@@ -58,7 +60,7 @@ namespace WebAppTest.Controllers
 		[HttpPost]
 		public async Task<IActionResult> ImportGame(int appId)
 		{
-			await _steamService.ImportGameAsync(appId);
+			await _gameService.ImportGameAsync(appId);
 			//return View();
 			return RedirectToAction("GameDetails", new {appId});
 		}
@@ -66,16 +68,15 @@ namespace WebAppTest.Controllers
 		[HttpGet]
 		public async Task<IActionResult> Get100ID()
 		{
-			List<int> ids = await _importService.Get100Games();
+			List<int> ids = await _dataGainService.GetNewSpyGameIds();
 			ViewBag.MyMessage = ids;
-			await _importService.Import100Games(ids);
-			//return RedirectToAction("Index");
+			await _importService.ImportNewGames(ids);
 			return View();
 		}
 
 		public async Task<IActionResult> UpdateData(int appId)
 		{
-			//await _steamService.UpdateGame(appId);
+			//await _gameService.UpdateGame(appId);
 			//return RedirectToAction("GameDetails", new { appId });
 			return View();
 		}
@@ -83,17 +84,18 @@ namespace WebAppTest.Controllers
 		[HttpPost]
 		public async Task<IActionResult> UpdateGame(int appId)
 		{
-			//await _dbService.UpdateGamePrice(appId);
+			await _gameService.UpdateGamePrice(appId);
+			await _context.SaveChangesAsync();
 			return RedirectToAction("GameDetails", new { appId });
-
 		}
 
-		[HttpPost]
-		public async Task<IActionResult> GetUserGames(string userId)
+		public async Task<IActionResult> UpdateAllGames()
 		{
-			var games = await _userService.GetUserGames(userId);
-			return View(games);
+			await _gameService.UpdateAllGamePrice();
+			await _context.SaveChangesAsync();
+			return RedirectToAction("Index", "Home");
 		}
+
 
 		public async Task<IActionResult> UserGameList()
 		{
@@ -104,7 +106,7 @@ namespace WebAppTest.Controllers
 		[HttpGet]
 		public async Task<IActionResult> FormGameTagsVector(int gameId)
 		{
-			var vector = await _userService.GetGameTagsStrengh(gameId);
+			var vector = await _gameService.GetGameTagsStrengh(gameId);
 			if (vector == null)
 			{
 				return View("NoData");
@@ -114,7 +116,7 @@ namespace WebAppTest.Controllers
 
 		public async Task<IActionResult> UpdateGamesImg()
 		{
-			await _dbService.UpdateImgAsync();
+			await _gameService.UpdateAllImgAsync();
 			return RedirectToPage("/Home/Index");
 		}
 	}

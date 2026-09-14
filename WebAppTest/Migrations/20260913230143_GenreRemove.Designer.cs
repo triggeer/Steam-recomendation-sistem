@@ -13,15 +13,15 @@ using WebAppTest.Data;
 namespace WebAppTest.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260702213601_ReviewAmount")]
-    partial class ReviewAmount
+    [Migration("20260913230143_GenreRemove")]
+    partial class GenreRemove
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.28")
+                .HasAnnotation("ProductVersion", "8.0.31")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -34,8 +34,18 @@ namespace WebAppTest.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("DetailedDescription")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("FinalPrice")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ImgUrl")
                         .HasColumnType("text");
 
                     b.Property<int>("InitialPrice")
@@ -48,13 +58,16 @@ namespace WebAppTest.Migrations
                     b.Property<long>("Owners")
                         .HasColumnType("bigint");
 
+                    b.Property<double>("Rating")
+                        .HasColumnType("double precision");
+
                     b.Property<int>("ReviewAmount")
                         .HasColumnType("integer");
 
                     b.Property<int>("SteamAppId")
                         .HasColumnType("integer");
 
-                    b.Property<double>("Rating")
+                    b.Property<double>("VectorLength")
                         .HasColumnType("double precision");
 
                     b.HasKey("Id");
@@ -65,21 +78,6 @@ namespace WebAppTest.Migrations
                     b.ToTable("Games");
                 });
 
-            modelBuilder.Entity("WebAppTest.Models.GameGenre", b =>
-                {
-                    b.Property<int>("GameId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("GenreId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("GameId", "GenreId");
-
-                    b.HasIndex("GenreId");
-
-                    b.ToTable("GameGenres");
-                });
-
             modelBuilder.Entity("WebAppTest.Models.GameTag", b =>
                 {
                     b.Property<int>("GameId")
@@ -87,6 +85,9 @@ namespace WebAppTest.Migrations
 
                     b.Property<int>("TagId")
                         .HasColumnType("integer");
+
+                    b.Property<double>("Strength")
+                        .HasColumnType("double precision");
 
                     b.Property<int>("Weight")
                         .HasColumnType("integer");
@@ -98,7 +99,26 @@ namespace WebAppTest.Migrations
                     b.ToTable("GameTags");
                 });
 
-            modelBuilder.Entity("WebAppTest.Models.Genre", b =>
+            modelBuilder.Entity("WebAppTest.Models.ListGame", b =>
+                {
+                    b.Property<int>("ListId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("GameId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("GamePosition")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ListId", "GameId");
+
+                    b.HasIndex("ListId", "GamePosition")
+                        .IsUnique();
+
+                    b.ToTable("ListGames");
+                });
+
+            modelBuilder.Entity("WebAppTest.Models.RecList", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -106,16 +126,15 @@ namespace WebAppTest.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("Id")
                         .IsUnique();
 
-                    b.ToTable("Genres");
+                    b.ToTable("RecLists");
                 });
 
             modelBuilder.Entity("WebAppTest.Models.Tag", b =>
@@ -138,9 +157,38 @@ namespace WebAppTest.Migrations
                     b.ToTable("Tags");
                 });
 
+            modelBuilder.Entity("WebAppTest.Models.UserGame", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.Property<int>("GameId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PlayTime")
+                        .HasColumnType("integer");
+
+                    b.HasKey("UserId", "GameId");
+
+                    b.ToTable("UserGames");
+                });
+
+            modelBuilder.Entity("WebAppTest.Models.UserList", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.Property<int>("ListId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("UserId", "ListId");
+
+                    b.ToTable("UserLists");
+                });
+
             modelBuilder.Entity("WebAppTest.Models.UserProfile", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<string>("UserId")
                         .HasColumnType("text");
 
                     b.Property<int>("GameAmount")
@@ -149,38 +197,16 @@ namespace WebAppTest.Migrations
                     b.Property<double>("Length")
                         .HasColumnType("double precision");
 
-                    b.Property<Dictionary<string, double>>("TagStrength")
+                    b.Property<Dictionary<int, double>>("TagStrength")
                         .IsRequired()
                         .HasColumnType("jsonb");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("Id")
-                        .IsUnique();
+                    b.HasKey("UserId");
 
                     b.ToTable("UserProfiles");
-                });
-
-            modelBuilder.Entity("WebAppTest.Models.GameGenre", b =>
-                {
-                    b.HasOne("WebAppTest.Models.Game", "Game")
-                        .WithMany("GameGenres")
-                        .HasForeignKey("GameId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("WebAppTest.Models.Genre", "Genre")
-                        .WithMany("GameGenres")
-                        .HasForeignKey("GenreId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Game");
-
-                    b.Navigation("Genre");
                 });
 
             modelBuilder.Entity("WebAppTest.Models.GameTag", b =>
@@ -204,14 +230,7 @@ namespace WebAppTest.Migrations
 
             modelBuilder.Entity("WebAppTest.Models.Game", b =>
                 {
-                    b.Navigation("GameGenres");
-
                     b.Navigation("GameTags");
-                });
-
-            modelBuilder.Entity("WebAppTest.Models.Genre", b =>
-                {
-                    b.Navigation("GameGenres");
                 });
 
             modelBuilder.Entity("WebAppTest.Models.Tag", b =>

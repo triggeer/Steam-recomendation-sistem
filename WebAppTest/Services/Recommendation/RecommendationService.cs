@@ -12,38 +12,41 @@ using WebAppTest.DTOs;
 using WebAppTest.Interfaces;
 using WebAppTest.Migrations;
 using WebAppTest.Models;
-using WebAppTest.Services;
+using WebAppTest.Services.Recommendation.Models;
 
-namespace WebAppTest.Services
+namespace WebAppTest.Services.Recommendation
 {
 	public class RecommendationService : IRecommendationService
 	{
 		private readonly AppDbContext _context;
-		private readonly HttpClient _httpClient;
 		private readonly IUserService _userService;
-		private readonly IDataGainService _dataGainService;
-		private readonly ICreateService _createService;
+		private readonly IUserListService _userListService;
 		
 		public RecommendationService(
 		AppDbContext context,
-		HttpClient httpClient,
 		IUserService userService,
-		IDataGainService dataGainService,
-		ICreateService createService
+		IUserListService userListService
 		)
 		{
 			_context = context;
-			_httpClient = httpClient;
 			_userService = userService;
-			_dataGainService = dataGainService;
-			_createService = createService;
+			_userListService = userListService;
 		}
 
-		public double CosSimilarity(
-			Dictionary<int, double> firstGameTags, 
+		/// <summary>
+		/// Высчитывает коссинусное сходствео между 2-я векторами тего игр.
+		/// В нашем случае коссинусное сходствео — метрика, отражащая схожесть тегов 2-х игр.
+		/// Принимает значения
+		/// </summary>
+		/// <param name="firstGameTags">словарь с ключем id тега и значением веса тега</param>
+		/// <param name="secondGameTags">словарь с ключем id тега и значением веса тега</param>
+		/// <param name="fristVectorLen"></param>
+		/// <param name="secondVectorLen"></param>
+		/// <returns>Косинусное сходство в пределах от 0 до 1</returns>
+		public double CosSimilarity
+		(	Dictionary<int, double> firstGameTags, 
 			Dictionary<int, double> secondGameTags,
-			double fristVectorLen, double secondVectorLen
-		)
+			double fristVectorLen, double secondVectorLen)
 		{
 			double scalar = 0;
 
@@ -70,75 +73,20 @@ namespace WebAppTest.Services
 			return scalar / (fristVectorLen * secondVectorLen);
 		}
 
-		public async Task AddGameVector()
-		{
-			var gameTags = await _context.GameTags.ToListAsync();
-			var games = await _context.Games.ToDictionaryAsync(x => x.Id);
-
-			foreach (var tags in gameTags.GroupBy(x => x.GameId))
-			{
-				int sum = tags.Sum(x => x.Weight);
-
-				if (sum == 0)
-					continue;
-
-				double sqrSum = 0;
-				
-				foreach (var tag in tags)
-				{ 
-					double strength = (double)tag.Weight / sum;
-					tag.UpdateStrength(strength);
-					sqrSum += strength * strength;
-				}
-				var length = Math.Sqrt(sqrSum);
-				games[tags.Key].UpdateVectorLength(length);
-			}
-
-			await _context.SaveChangesAsync();
-		}
-
-
-		public async Task<UserVectorResponse> FormUserTagVector(string userId)
-		{
-			// проверяем, есть ли уже сформированный вектор
-			bool exists = await _dataGainService.ChekUserTagVectorExistense(userId);
-			
-			// если нет - добавляем
-			if (!exists)
-			{
-				await _userService.AddUserTagVector(userId);
-			}
-
-			int gameAmount = await _dataGainService.GetCurrentGameAmount(userId);
-			DateTime currentDate = DateTime.Now;
-			// берем инфу из бд
-			UserVectorResponse vector = await _userService.GetUserVector(userId);
-
-			
-			if (vector.GameAmount != gameAmount || (currentDate - vector.UpdatedAt) > TimeSpan.FromDays(7))
-			{
-
-				await _userService.UpdateUserVector(userId);
-			}
-
-
-			return vector; // гуд
-		}
-
-		private async Task<Dictionary<int, double>> FormUserTagsDict(string userId)
-		{
-			UserVectorResponse userVector = await FormUserTagVector(userId);
-			Dictionary<int, double> userTags = userVector.TagStrength;
-			return userTags;
-		}
-
 		public async Task<List<RecommendationDto>> FormRecommendationListAsync(string userId)
 		{
 			List<RecommendationCandidate> recommendations = await FormUnsortedRecommendationList(userId);
 			var list = new List<RecommendationDto>();
 			foreach (var candidate in recommendations)
 			{
-				list.Add(candidate.Game);
+				var reccomendation = new RecommendationDto()
+				{
+					GameId = candidate.Id,
+					GameName = candidate.Name,
+					Score = candidate.Score,
+					GameTags = candidate.GameTags
+				};
+				list.Add(reccomendation);
 			}
 			// сортируем по рейтингу схожести
 			List<RecommendationDto> sortedList = list.OrderByDescending(r => r.Score).ToList();
@@ -169,17 +117,20 @@ namespace WebAppTest.Services
 		public async Task<List<RecommendationDto>> ForUniqueRecomendationsAsync(string userId)
 		{
 			//var list11 = await CollectFormedList(userId);
-			var banList = FormIdBanList(userId);
+			var banList = _userListService.FormIdBanList(userId);
 			var uniqueList = new List<RecommendationCandidate>();
 			List<RecommendationCandidate> recGames = await FormUnsortedRecommendationList(userId);
-			List<RecommendationCandidate> sortedCandidates = recGames.OrderByDescending(x => x.UserScore).ToList();
+			List<RecommendationCandidate> sortedCandidates = recGames.OrderByDescending(x => x.Score).ToList();
 			sortedCandidates.RemoveAll(game => banList.Contains(game.Id));
+
+			if (sortedCandidates.Count == 0)
+				return new List<RecommendationDto> { }; // обработать исключение
 
 			Dictionary<(int, int), double> similaritys = new();
 
 			//var first = sortedCandidates.FirstOrDefault(x => !banList.Contains(x.Id));
 			var first = sortedCandidates[0];
-			first.FinalScore = first.UserScore;
+			first.FinalScore = first.Score;
 			uniqueList.Add(first);
 			sortedCandidates.Remove(first);
 
@@ -198,18 +149,19 @@ namespace WebAppTest.Services
 
 			var chosenGame = new RecommendationCandidate();
 
+			
 
-			while (uniqueList.Count < 30)
+			while (uniqueList.Count < sortedCandidates.Count && uniqueList.Count < 30)
 			{
-				/*
-				 * MaxSimilarity не сбрасывается с каждым циклом, 
-				 * а копится, чтобы оставлять уже вычисленное сходство кандидата с уже выбранными играми
-				 */
-				// для каждого кандидата из рекомендаций
-				//(mhw, ggst, dota,...) НЕВЫБРАННЫЕ ИГРЫ
-				foreach (var candidate in sortedCandidates)
+					/*
+					 * MaxSimilarity не сбрасывается с каждым циклом, 
+					 * а копится, чтобы оставлять уже вычисленное сходство кандидата с уже выбранными играми
+					 */
+					// для каждого кандидата из рекомендаций
+					//(mhw, ggst, dota,...) НЕВЫБРАННЫЕ ИГРЫ
+					foreach (var candidate in sortedCandidates)
 				{
-
+					
 					// для всех оставшихся игр из кандидатов
 					// сравниваем похожеcть тегов
 					// каждый вектор ВЫБРАННОЙ игры
@@ -240,7 +192,7 @@ namespace WebAppTest.Services
 					//}
 					//													если очень схоже с хоть одной из-
 					//													-уже выбранных игр то биг штраф
-					candidate.FinalScore = (0.8 * candidate.UserScore) - (0.2 * candidate.MaxSimilarity);
+					candidate.FinalScore = (0.8 * candidate.Score) - (0.2 * candidate.MaxSimilarity);
 
 				}
 
@@ -254,12 +206,18 @@ namespace WebAppTest.Services
 			var list = new List<RecommendationDto>();
 			foreach (var candidate in uniqueList)
 			{
-				candidate.Game.Score = candidate.FinalScore;
-				list.Add(candidate.Game);
+				RecommendationDto recommendation = new RecommendationDto()
+				{
+					GameId = candidate.Id,
+					GameName = candidate.Name,
+					Score = candidate.FinalScore,
+					GameTags = candidate.GameTags
+				};
+				list.Add(recommendation);
 			}
 			var sortedList = list.OrderByDescending(x => x.Score).ToList();
 
-			await AddUserList(sortedList, userId);
+			await _userListService.AddUserList(sortedList, userId);
 
 			return sortedList;
 		}
@@ -273,7 +231,7 @@ namespace WebAppTest.Services
 			string gameName,
 			double gameVectorLen,
 			int gameReviewAmount,
-			double gameUserScore)
+			double gameRating)
 		{
 			double finalScore = 0;
 			if (gameTagsInfo.TryGetValue(gameId, out Dictionary<int, double> gameTags))
@@ -284,26 +242,16 @@ namespace WebAppTest.Services
 					ELDEN RING NIGHTREIGN: --> 0,5826818525389187 <--- 
 					Valheim: --> 0,5805596998270341 <---
 				*/
-				double rating = CalculateBayesRaiting(gameReviewAmount, gameUserScore);
+				double rating = CalculateBayesRaiting(gameReviewAmount, gameRating);
 
 				finalScore = similarity * rating;
 			}
 
-			RecommendationDto recommendationDto = new RecommendationDto
-			{
-				//GameId = game.SteamAppId,
-				// меняем seam ID на id БД
-				GameId = gameId,
-				GameName = gameName,
-				Score = finalScore,
-				GameTags = gameTags
-			};
-
 			RecommendationCandidate candiadate = new RecommendationCandidate
 			{
-				Id = recommendationDto.GameId,
-				Game = recommendationDto,
-				UserScore = finalScore,
+				Id = gameId,
+				Name = gameName,
+				Score = finalScore,
 				MaxSimilarity = 0,
 				FinalScore = 0
 			};
@@ -326,12 +274,15 @@ namespace WebAppTest.Services
 		private async Task<List<RecommendationCandidate>> FormUnsortedRecommendationList(string userId)
 		{
 			var list = new List<RecommendationCandidate>();
-			
-			Dictionary<int, double> userTags = await FormUserTagsDict(userId);
-			
-			var userProfile = await _context.UserProfiles.FirstOrDefaultAsync(x => x.Id == userId);
-			
-			double userTagLen = userProfile.Length;
+			 
+			var userProfile = await _context.UserProfiles.FirstOrDefaultAsync(x => x.UserId == userId);
+			if (userProfile == null)
+			{
+				userProfile = await _userService.CreateUserProfile(userId);
+				await _context.UserProfiles.AddAsync(userProfile);
+				await _context.SaveChangesAsync();
+			}
+			double userTagLen = userProfile.Length; 
 
 			///
 			List<OwnedGameDto> userGames = await _userService.GetActualUserGames(userId);
@@ -343,7 +294,7 @@ namespace WebAppTest.Services
 				x.Name, 
 				x.VectorLength, 
 				x.SteamAppId, 
-				x.UserScore, 
+				x.Rating, 
 				x.ReviewAmount}
 				).ToListAsync();
 			
@@ -355,6 +306,9 @@ namespace WebAppTest.Services
 				x => x.Key,
 				x => x.ToDictionary(t => t.TagId, t => t.Strength)
 				);
+			
+				
+			Dictionary<int, double> userTags = await _userService.GetUserTagVector(userId);
 			
 			foreach (var game in games)
 			{
@@ -368,9 +322,9 @@ namespace WebAppTest.Services
 						gameTagsInfo, 
 						game.Id, game.Name,
 						game.VectorLength, game.ReviewAmount,
-						game.UserScore);
+						game.Rating);
 
-					if (recommendation.UserScore > 0)
+					if (recommendation.Score > 0)
 					{
 						list.Add(recommendation);
 					}
@@ -380,145 +334,6 @@ namespace WebAppTest.Services
 			return list;
 		}
 
-		/// <summary>
-		/// Записывает данные сформированного списка рекомендаций в БД
-		/// </summary>
-		/// <param name="recommendedList">Сформированный список рекомендаций</param>
-		/// <returns>Записанные данные о сформированном списке в БД</returns>
-		public async Task AddUserList(List<RecommendationDto> recommendedList, string userId)
-		{
-			DateTime updatedAt = DateTime.Now;
-			RecList recList = new RecList(updatedAt);
-
-			_context.RecLists.Add(recList);
-			await _context.SaveChangesAsync();
-
-			var gamesFromList = new List<ListGame>();
-
-			int position = 0;
-			foreach (var game in recommendedList)
-			{
-				ListGame listGame = new ListGame(recList.Id, game.GameId, position);
-				position++;
-				gamesFromList.Add(listGame);
-			}
-
-			_context.ListGames.AddRange(gamesFromList);
-
-			var userList = new UserList(userId, recList.Id);
-
-			_context.UserLists.Add(userList);
-
-			await _context.SaveChangesAsync();
-
-		}
-
-		/// <summary>
-		/// Формирует HashSet с id игр, которые уже были в сформированных списках рекомендаций
-		/// </summary>
-		/// <returns>хеш-таблица для быстрого поиска id, которые будем избегать</returns>
-		protected HashSet<int> FormIdBanList(string userId)
-		{
-			var emptyList = new HashSet<int>();
-
-			var userListsData = _context.UserLists.Where(x => x.UserId == userId);
-			if (userListsData.Any())
-			{
-				var userLists = userListsData
-					.Select(x => x.ListId)
-					.ToList();
-
-				List<int> gameIds = _context.ListGames
-					.Where(x => userLists.Contains(x.ListId))
-					.Select(l => l.GameId)
-					.ToList();
-					
-				HashSet<int> hashIds = gameIds.ToHashSet();
-				return hashIds;
-			}
-			else return emptyList;
-		}
-
-		/// <summary>
-		/// Вытягивает из БД все уже сформированные списки пользователя 
-		/// </summary>
-		/// <returns>
-		/// Словарь с id пользователя в качестве ключа 
-		/// и списка id всех сформированных списков рекомендаций как значение</returns>
-		//public async Task<Dictionary<int, List<int>>> CollectFormedList(string userId)
-		//{
-		//	var listOfLists = new Dictionary<int, List<int>>();	
-
-		//	List<int> userListsIds = await _context.UserLists
-		//		.Where(u => u.UserId == userId)
-		//		.Select(l => l.ListId)
-		//		.ToListAsync();
-
-		//	foreach (var listId in userListsIds)
-		//	{
-		//		List<int> gamesIds = await _context.ListGames
-		//			.Where(x => x.ListId == listId)
-		//			.OrderBy(g => g.GamePosition)
-		//			.Select(i => i.GameId)
-		//			.ToListAsync();
-
-		//		listOfLists.Add(listId, gamesIds);
-		//	}
-
-		//	return listOfLists;
-		//}
-
-		/// <summary>
-		// var game = await _context.Games
-				//.Include(gt => gt.GameTags)
-				//		.ThenInclude(t => t.Tag)
-				//.FirstOrDefaultAsync(x => x.Id == chosenId);
-
-		/// </summary>
-		/// <param name="userId"></param>
-		/// <returns></returns>
-		public async Task<List<PrevListDto>> CollectFormedList(string userId)
-		{
-			List<PrevListDto> listOfLists = new();
-
-			List<int> userListsIds = await _context.UserLists
-				.Where(u => u.UserId == userId)
-				.Select(l => l.ListId)
-				.ToListAsync();
-
-			foreach (var listId in userListsIds)
-			{
-				//PrevListDto prevList = new PrevListDto();	
-
-				List<int> gamesIds = await _context.ListGames
-					.Where(x => x.ListId == listId)
-					.OrderBy(g => g.GamePosition)
-					.Select(i => i.GameId)
-					.ToListAsync();
-
-				List<GamePreviewDto> gameDetails = await _context.Games
-					.Where(x => gamesIds.Contains(x.Id))
-					.Select(g  => new GamePreviewDto
-					{
-						Id = g.Id,
-						Name = g.Name,
-						ImgUrl = g.ImgUrl
-					})
-					.ToListAsync();
-				
-				var prevList = new PrevListDto() 
-					{ 
-						Id = listId, 
-						Games = gameDetails
-					};
-				//prevList.Id = listId;
-				//prevList.Games = gameDetails;
-
-				listOfLists.Add(prevList);
-			}
-
-			return listOfLists;
-		}
 	}
 }
 

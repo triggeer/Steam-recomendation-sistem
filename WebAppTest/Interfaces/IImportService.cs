@@ -2,7 +2,7 @@
 {
 	public interface IImportService
 	{
-		Task<List<int>> Get100Games();
-		Task Import100Games(List<int> ids);
+		Task ImportNewGames(List<int> ids);
+		Task ImportNewGames();
 	}
 }

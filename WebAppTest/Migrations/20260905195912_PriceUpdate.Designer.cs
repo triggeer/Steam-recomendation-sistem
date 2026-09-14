@@ -13,15 +13,15 @@ using WebAppTest.Data;
 namespace WebAppTest.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260702213601_ReviewAmount")]
-    partial class ReviewAmount
+    [Migration("20260905195912_PriceUpdate")]
+    partial class PriceUpdate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.28")
+                .HasAnnotation("ProductVersion", "8.0.30")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -34,8 +34,18 @@ namespace WebAppTest.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("DetailedDescription")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("FinalPrice")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ImgUrl")
                         .HasColumnType("text");
 
                     b.Property<int>("InitialPrice")
@@ -55,6 +65,9 @@ namespace WebAppTest.Migrations
                         .HasColumnType("integer");
 
                     b.Property<double>("Rating")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("VectorLength")
                         .HasColumnType("double precision");
 
                     b.HasKey("Id");
@@ -88,6 +101,9 @@ namespace WebAppTest.Migrations
                     b.Property<int>("TagId")
                         .HasColumnType("integer");
 
+                    b.Property<double>("Strength")
+                        .HasColumnType("double precision");
+
                     b.Property<int>("Weight")
                         .HasColumnType("integer");
 
@@ -118,6 +134,44 @@ namespace WebAppTest.Migrations
                     b.ToTable("Genres");
                 });
 
+            modelBuilder.Entity("WebAppTest.Models.ListGame", b =>
+                {
+                    b.Property<int>("ListId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("GameId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("GamePosition")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ListId", "GameId");
+
+                    b.HasIndex("ListId", "GamePosition")
+                        .IsUnique();
+
+                    b.ToTable("ListGames");
+                });
+
+            modelBuilder.Entity("WebAppTest.Models.RecList", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Id")
+                        .IsUnique();
+
+                    b.ToTable("RecLists");
+                });
+
             modelBuilder.Entity("WebAppTest.Models.Tag", b =>
                 {
                     b.Property<int>("Id")
@@ -138,9 +192,38 @@ namespace WebAppTest.Migrations
                     b.ToTable("Tags");
                 });
 
+            modelBuilder.Entity("WebAppTest.Models.UserGame", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.Property<int>("GameId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PlayTime")
+                        .HasColumnType("integer");
+
+                    b.HasKey("UserId", "GameId");
+
+                    b.ToTable("UserGames");
+                });
+
+            modelBuilder.Entity("WebAppTest.Models.UserList", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.Property<int>("ListId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("UserId", "ListId");
+
+                    b.ToTable("UserLists");
+                });
+
             modelBuilder.Entity("WebAppTest.Models.UserProfile", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<string>("UserId")
                         .HasColumnType("text");
 
                     b.Property<int>("GameAmount")
@@ -149,17 +232,14 @@ namespace WebAppTest.Migrations
                     b.Property<double>("Length")
                         .HasColumnType("double precision");
 
-                    b.Property<Dictionary<string, double>>("TagStrength")
+                    b.Property<Dictionary<int, double>>("TagStrength")
                         .IsRequired()
                         .HasColumnType("jsonb");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("Id")
-                        .IsUnique();
+                    b.HasKey("UserId");
 
                     b.ToTable("UserProfiles");
                 });
