@@ -9,12 +9,10 @@ namespace WebAppTest.Services
 {
 	public class GameService : IGameService
 	{
-		private readonly HttpClient _httpClient;
 		private readonly AppDbContext _context;
 		private readonly IDataGainService _dataGainService;
 
 		public GameService(
-			HttpClient httpClient,
 			IConfiguration configuration,
 			AppDbContext context,
 			IDataGainService dataGainService
@@ -42,12 +40,11 @@ namespace WebAppTest.Services
 		{
 			var game = new Game(appId, name, imgUrl, detaildDescription, userScore, reviewAmount, owners, initialPrice, finalPrice, currency, vectorLength);
 
+			int sum = tags.Values.Sum();
 
 			List<GameTag> tagList = new();
 			foreach (KeyValuePair<string, int> tagPair in tags)
 			{
-				int sum = tags.Values.Sum();
-
 				string tagName = tagPair.Key;
 
 				int tagWeight = tagPair.Value;
@@ -74,31 +71,24 @@ namespace WebAppTest.Services
 			return game;
 		}
 
-		public double CalculateVectorLen(List<GameTag> gameTags)
+		public double CalculateVectorLen(List<GameTag> tags)
 		{
 			double length = 0;
-			foreach (var tags in gameTags.GroupBy(x => x.GameId))
-			{
-				int sum = tags.Sum(x => x.Weight);
 
-				if (sum == 0)
-					continue;
+			int sum = tags.Sum(x => x.Weight);
 
-				double sqrSum = 0;
+			if (sum == 0)
+				return length;
 
-				foreach (var tag in tags)
-					sqrSum += tag.Strength * tag.Strength;
+			double sqrSum = 0;
 
-				length = Math.Sqrt(sqrSum);
-			}
+			foreach (var tag in tags)
+				sqrSum += tag.Strength * tag.Strength;
+
+			length = Math.Sqrt(sqrSum);
+			
 			return length;
 		}
-
-		//public async Task AddGame(Game game)
-		//{
-		//	_context.Games.Add(game);
-		//	await _context.SaveChangesAsync();
-		//}
 
 		public async Task<bool> ImportGameAsync(int appId)
 		{
@@ -114,13 +104,13 @@ namespace WebAppTest.Services
 					}
 					if (steamDto != null)
 					{
-						SpyGameDto spyDto = await _dataGainService.GetSpyData(appId);
+						SpyGameDto? spyDto = await _dataGainService.GetSpyData(appId);
 
 						Dictionary<string, int> tags = _dataGainService.GetTags(spyDto);
 
-						(double userScore, int reviewAmount) = await _dataGainService.GetUserScore(appId);
-
 						long owners = _dataGainService.GetOwners(spyDto);
+
+						(double userScore, int reviewAmount) = await _dataGainService.GetUserScore(appId);
 
 						PriceData price = await _dataGainService.GetGamePrice(steamDto.SteamAppId);
 
@@ -183,6 +173,53 @@ namespace WebAppTest.Services
 			};
 			return details;
 		}
+
+		//							"123 (ds3)": {rpg:0.5, sols-like:0.7}
+		public async Task<Dictionary<string, Dictionary<string, double>>> GetGameTagsStrengh(int gameId)
+		{
+			bool exists = await _context.Games.AnyAsync(g => g.SteamAppId == gameId);
+
+
+			if (!exists)
+			{
+				await ImportGameAsync(gameId);
+			}
+
+			GameResponse game = await GetGame(gameId);
+
+			if (game == null)
+			{
+				return null;
+			}
+			var vector = new Dictionary<string, Dictionary<string, double>> { [gameId.ToString()] = [] };
+
+			int counter = 0;
+
+			foreach (SpyTag tag in game.Tags)
+			{
+				counter += tag.Weight;
+			}
+
+			foreach (SpyTag tag in game.Tags)
+			{
+				if (game.Tags != null)
+				{
+					double tStrengh = (double)tag.Weight / counter;
+					//				 "123 (ds3)":			 {rpg:			0.5,...}	
+					if (vector[gameId.ToString()].TryGetValue(tag.Name, out double currentValue))
+					{
+						vector[gameId.ToString()][tag.Name] = currentValue + tStrengh;
+					}
+					else
+					{//		        "123 (ds3)":	  {rpg:		0.5,...}	
+						vector[gameId.ToString()].Add(tag.Name, tStrengh);
+					}
+				}
+			}
+
+			return vector;
+		}
+
 
 
 		public async Task UpdateAllGamePrice()
@@ -251,7 +288,32 @@ namespace WebAppTest.Services
 				await _context.SaveChangesAsync();
 			}
 		}
-		
 
+		public async Task AddGameVector()
+		{
+			var gameTags = await _context.GameTags.ToListAsync();
+			var games = await _context.Games.ToDictionaryAsync(x => x.Id);
+
+			foreach (var tags in gameTags.GroupBy(x => x.GameId))
+			{
+				int sum = tags.Sum(x => x.Weight);
+
+				if (sum == 0)
+					continue;
+
+				double sqrSum = 0;
+
+				foreach (var tag in tags)
+				{
+					double strength = (double)tag.Weight / sum;
+					tag.UpdateStrength(strength);
+					sqrSum += strength * strength;
+				}
+				var length = Math.Sqrt(sqrSum);
+				games[tags.Key].UpdateVectorLength(length);
+			}
+
+			await _context.SaveChangesAsync();
+		}
 	}
 }

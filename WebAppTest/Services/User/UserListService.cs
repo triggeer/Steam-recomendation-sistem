@@ -8,11 +8,9 @@ namespace WebAppTest.Services.User
 {
 	public class UserListService : IUserListService
 	{
-		private readonly HttpClient _httpClient;
 		private readonly AppDbContext _context;
 
 		public UserListService(
-		HttpClient httpClient,
 		AppDbContext context
 		) 
 		{ 
@@ -124,8 +122,5 @@ namespace WebAppTest.Services.User
 			else return emptyList;
 		}
 
-		
-
-		
 	}
 }

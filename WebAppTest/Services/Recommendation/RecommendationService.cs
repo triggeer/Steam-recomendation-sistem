@@ -18,14 +18,12 @@ namespace WebAppTest.Services.Recommendation
 {
 	public class RecommendationService : IRecommendationService
 	{
-		private readonly HttpClient _httpClient;
 		private readonly AppDbContext _context;
 		private readonly IUserService _userService;
 		private readonly IUserListService _userListService;
 		
 		public RecommendationService(
 		AppDbContext context,
-		HttpClient httpClient,
 		IUserService userService,
 		IUserListService userListService
 		)
@@ -75,80 +73,6 @@ namespace WebAppTest.Services.Recommendation
 			return scalar / (fristVectorLen * secondVectorLen);
 		}
 
-		public async Task AddGameVector()
-		{
-			var gameTags = await _context.GameTags.ToListAsync();
-			var games = await _context.Games.ToDictionaryAsync(x => x.Id);
-
-			foreach (var tags in gameTags.GroupBy(x => x.GameId))
-			{
-				int sum = tags.Sum(x => x.Weight);
-
-				if (sum == 0)
-					continue;
-
-				double sqrSum = 0;
-				
-				foreach (var tag in tags)
-				{ 
-					double strength = (double)tag.Weight / sum;
-					tag.UpdateStrength(strength);
-					sqrSum += strength * strength;
-				}
-				var length = Math.Sqrt(sqrSum);
-				games[tags.Key].UpdateVectorLength(length);
-			}
-
-			await _context.SaveChangesAsync();
-		}
-
-
-
-		//public async Task<UserVectorResponse> FormUserTagVector(string userId)
-		//{
-		//	// проверяем, есть ли уже сформированный вектор
-		//	bool exists = await _dataGainService.ChekUserTagVectorExistense(userId);
-
-		//	// если нет - добавляем
-		//	if (!exists)
-		//	{
-		//		await _userService.AddUserTagVector(userId);
-		//	}
-
-		//	int gameAmount = await _dataGainService.GetCurrentGameAmount(userId);
-		//	DateTime currentDate = DateTime.Now;
-		//	// берем инфу из бд
-		//	UserVectorResponse vector = await _userService.GetUserVector(userId);
-
-
-		//	if (vector.GameAmount != gameAmount || (currentDate - vector.UpdatedAt) > TimeSpan.FromDays(7))
-		//	{
-
-		//		await _userService.UpdateUserProfile(userId);
-		//		await _context.SaveChangesAsync();
-		//	}
-
-		//	return vector;
-		//}
-
-		//public async Task<Dictionary<int, double>> GetUserTagVector(string userId)
-		//{
-		//	UserProfile? userProfile = await _context.UserProfiles
-		//			.FirstOrDefaultAsync(x => x.UserId == userId);
-
-		//	DateTime currentDate = DateTime.Now;
-
-		//	if (userProfile == null) 
-		//	{
-		//		userProfile = await _userService.CreateUserProfile(userId);
-		//	}
-		//	else if ((currentDate - userProfile.UpdatedAt) > TimeSpan.FromDays(7))
-		//	{
-		//		await _userService.UpdateUserProfile(userProfile);
-		//	}
-		//	return userProfile.TagStrength;
-		//}
-
 		public async Task<List<RecommendationDto>> FormRecommendationListAsync(string userId)
 		{
 			List<RecommendationCandidate> recommendations = await FormUnsortedRecommendationList(userId);
@@ -193,11 +117,14 @@ namespace WebAppTest.Services.Recommendation
 		public async Task<List<RecommendationDto>> ForUniqueRecomendationsAsync(string userId)
 		{
 			//var list11 = await CollectFormedList(userId);
-			var banList = FormIdBanList(userId);
+			var banList = _userListService.FormIdBanList(userId);
 			var uniqueList = new List<RecommendationCandidate>();
 			List<RecommendationCandidate> recGames = await FormUnsortedRecommendationList(userId);
 			List<RecommendationCandidate> sortedCandidates = recGames.OrderByDescending(x => x.Score).ToList();
 			sortedCandidates.RemoveAll(game => banList.Contains(game.Id));
+
+			if (sortedCandidates.Count == 0)
+				return new List<RecommendationDto> { }; // обработать исключение
 
 			Dictionary<(int, int), double> similaritys = new();
 
@@ -222,18 +149,19 @@ namespace WebAppTest.Services.Recommendation
 
 			var chosenGame = new RecommendationCandidate();
 
+			
 
-			while (uniqueList.Count < 30)
+			while (uniqueList.Count < sortedCandidates.Count && uniqueList.Count < 30)
 			{
-				/*
-				 * MaxSimilarity не сбрасывается с каждым циклом, 
-				 * а копится, чтобы оставлять уже вычисленное сходство кандидата с уже выбранными играми
-				 */
-				// для каждого кандидата из рекомендаций
-				//(mhw, ggst, dota,...) НЕВЫБРАННЫЕ ИГРЫ
-				foreach (var candidate in sortedCandidates)
+					/*
+					 * MaxSimilarity не сбрасывается с каждым циклом, 
+					 * а копится, чтобы оставлять уже вычисленное сходство кандидата с уже выбранными играми
+					 */
+					// для каждого кандидата из рекомендаций
+					//(mhw, ggst, dota,...) НЕВЫБРАННЫЕ ИГРЫ
+					foreach (var candidate in sortedCandidates)
 				{
-
+					
 					// для всех оставшихся игр из кандидатов
 					// сравниваем похожеcть тегов
 					// каждый вектор ВЫБРАННОЙ игры
@@ -406,109 +334,6 @@ namespace WebAppTest.Services.Recommendation
 			return list;
 		}
 
-		///// <summary>
-		///// Записывает данные сформированного списка рекомендаций в БД
-		///// </summary>
-		///// <param name="recommendedList">Сформированный список рекомендаций</param>
-		///// <returns>Записанные данные о сформированном списке в БД</returns>
-		//public async Task AddUserList(List<RecommendationDto> recommendedList, string userId)
-		//{
-		//	DateTime updatedAt = DateTime.Now;
-		//	RecList recList = new RecList(updatedAt);
-
-		//	_context.RecLists.Add(recList);
-		//	await _context.SaveChangesAsync();
-
-		//	var gamesFromList = new List<ListGame>();
-
-		//	int position = 0;
-		//	foreach (var game in recommendedList)
-		//	{
-		//		ListGame listGame = new ListGame(recList.Id, game.GameId, position);
-		//		position++;
-		//		gamesFromList.Add(listGame);
-		//	}
-
-		//	_context.ListGames.AddRange(gamesFromList);
-
-		//	var userList = new UserList(userId, recList.Id);
-
-		//	_context.UserLists.Add(userList);
-
-		//	await _context.SaveChangesAsync();
-
-		//}
-
-		/// <summary>
-		/// Формирует HashSet с id игр, которые уже были в сформированных списках рекомендаций
-		/// </summary>
-		/// <returns>хеш-таблица для быстрого поиска id, которые будем избегать</returns>
-		protected HashSet<int> FormIdBanList(string userId)
-		{
-			var emptyList = new HashSet<int>();
-
-			var userListsData = _context.UserLists.Where(x => x.UserId == userId);
-			if (userListsData.Any())
-			{
-				var userLists = userListsData
-					.Select(x => x.ListId)
-					.ToList();
-
-				List<int> gameIds = _context.ListGames
-					.Where(x => userLists.Contains(x.ListId))
-					.Select(l => l.GameId)
-					.ToList();
-					
-				HashSet<int> hashIds = gameIds.ToHashSet();
-				return hashIds;
-			}
-			else return emptyList;
-		}
-
-		public async Task<List<PrevListDto>> CollectFormedList(string userId)
-		{
-			List<PrevListDto> listOfLists = new();
-
-			List<int> userListsIds = await _context.UserLists
-				.Where(u => u.UserId == userId)
-				.Select(l => l.ListId)
-				.ToListAsync();
-
-			foreach (var listId in userListsIds)
-			{
-				List<ListGame> listGames = await _context.ListGames
-					.Where(x => x.ListId == listId)
-					.OrderBy(g => g.GamePosition)
-					.ToListAsync();
-
-				List<int> idList = listGames.Select(x => x.GameId).ToList();
-
-
-				List<GamePreviewDto> gameDetails = await _context.Games
-					.Where(x => idList.Contains(x.Id))
-					.Select(g  => new GamePreviewDto
-					{
-						Id = g.Id,
-						Name = g.Name,
-						ImgUrl = g.ImgUrl
-					})
-					.ToListAsync();
-
-				Dictionary<int, int> positions = listGames.ToDictionary(x => x.GameId, x => x.GamePosition);
-
-				gameDetails = gameDetails.OrderBy(g => positions[g.Id]).ToList();
-
-				var prevList = new PrevListDto() 
-					{ 
-						Id = listId, 
-						Games = gameDetails
-					};
-
-				listOfLists.Add(prevList);
-			}
-
-			return listOfLists;
-		}
 	}
 }
 

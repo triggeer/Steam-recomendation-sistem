@@ -18,19 +18,22 @@ namespace WebAppTest.Controllers
 		private readonly IRecommendationService _recommendationService;
 		private readonly IDataGainService _dataGainService;
 		private readonly IUserListService _userListService;
+		private readonly IGameService _gameService;
 
 		public RecommendationController(
 		AppDbContext context,
 		IUserService userService,
 		IRecommendationService recommendationService,
 		IDataGainService dataGainService,
-		IUserListService userListService)
+		IUserListService userListService,
+		IGameService gameService)
 		{
 			_context = context;
 			_userService = userService;
 			_recommendationService = recommendationService;
 			_dataGainService = dataGainService;
 			_userListService = userListService;
+			_gameService = gameService;
 		}
 
 
@@ -66,7 +69,7 @@ namespace WebAppTest.Controllers
 		[HttpGet]
 		public async Task UpdateGameVectors()
 		{
-			await _recommendationService.AddGameVector();
+			await _gameService.AddGameVector();
 		}
 
 

@@ -106,7 +106,7 @@ namespace WebAppTest.Controllers
 		[HttpGet]
 		public async Task<IActionResult> FormGameTagsVector(int gameId)
 		{
-			var vector = await _userService.GetGameTagsStrengh(gameId);
+			var vector = await _gameService.GetGameTagsStrengh(gameId);
 			if (vector == null)
 			{
 				return View("NoData");

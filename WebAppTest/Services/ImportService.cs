@@ -10,12 +10,10 @@ namespace WebAppTest.Services
 {
 	public class ImportService : IImportService
 	{
-		private readonly HttpClient _httpClient;
 		private readonly IGameService _gameService;
 		private readonly IDataGainService _dataGainService;
 
 		public ImportService(
-			HttpClient httpClient,
 			IGameService gameService,
 			IDataGainService dataGainService
 			)

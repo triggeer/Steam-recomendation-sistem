@@ -32,18 +32,6 @@ namespace WebAppTest.Services
 
 		}
 
-		public async Task<bool> CheckGameExistense(int appId)
-		{
-			bool exists = await _context.Games.AnyAsync(g => g.SteamAppId == appId);
-			return exists;
-		}
-
-		public async Task<bool> ChekUserTagVectorExistense(string userId)
-		{
-			bool exists = await _context.UserProfiles.AnyAsync(u => u.UserId == userId.ToString());
-			return exists;
-		}
-
 		public async Task<PriceData> GetGamePrice(int steamId)
 		{
 			var priceData = new PriceData();
@@ -87,9 +75,9 @@ namespace WebAppTest.Services
 		{
 			var tags = new Dictionary<string, int>();
 
-			if (spyDto.Tags.ValueKind == JsonValueKind.Object)
+			if (spyDto.Tags?.ValueKind == JsonValueKind.Object)
 			{
-				foreach (JsonProperty property in spyDto.Tags.EnumerateObject())
+				foreach (JsonProperty property in spyDto.Tags?.EnumerateObject())
 				{
 					tags[property.Name] = property.Value.GetInt32();
 				}
@@ -139,7 +127,7 @@ namespace WebAppTest.Services
 
 
 
-		public async Task<SpyGameDto> GetSpyData(int appId)
+		public async Task<SpyGameDto?> GetSpyData(int appId)
 		{
 			string spyUrl = $"https://steamspy.com/api.php?request=appdetails&appid={appId}";
 
@@ -157,7 +145,7 @@ namespace WebAppTest.Services
 			SpyGameDto? spyDto = JsonSerializer.Deserialize<SpyGameDto>(
 				spyJsonString,
 				options
-			) ?? throw new Exception("SteamSpy DTO is null");
+			);
 
 			return spyDto;
 		}

@@ -9,25 +9,25 @@ namespace WebAppTest.DTOs
 		public int AppId { get; set; }
 
 		[JsonPropertyName("tags")]
-		public JsonElement Tags { get; set; }
+		public JsonElement? Tags { get; set; }
 
 		[JsonPropertyName("price")]
 		[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
-		public int FinalPrice { get; set; } = -1;
+		public int? FinalPrice { get; set; } = -1;
 
 		[JsonPropertyName("initialprice")]
 		[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
-		public int InitialPrice { get; set; } = -1;
+		public int? InitialPrice { get; set; } = -1;
 		
 		[JsonPropertyName("positive")]
 		[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
-		public int Positive {  get; set; }
+		public int? Positive {  get; set; }
 
 		[JsonPropertyName("negative")]
 		[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
-		public int Negative { get; set; }
+		public int? Negative { get; set; }
 
 		[JsonPropertyName("owners")]
-		public string Owners { get; set ; } = "0";
+		public string? Owners { get; set ; } = "0";
 	}
 }

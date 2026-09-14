@@ -27,12 +27,13 @@ var dataSource = dataSourceBuilder.Build();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpClient<IImportService, ImportService>();
+builder.Services.AddScoped<IImportService, ImportService>();
+builder.Services.AddScoped<IUserListService, UserListService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddHttpClient<IDataGainService, DataGainService>();
-builder.Services.AddHttpClient<IUserListService, UserListService>();
-builder.Services.AddHttpClient<IUserService, UserService>();
-builder.Services.AddHttpClient<IRecommendationService, RecommendationService>();
-builder.Services.AddHttpClient<IGameService, GameService>();
+
 //builder.Services.AddDbContext<AppDbContext>();
 builder.Services.AddDbContext<AppDbContext>(options =>	options.UseNpgsql(dataSource));
 

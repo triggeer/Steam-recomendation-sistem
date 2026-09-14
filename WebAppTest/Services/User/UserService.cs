@@ -12,13 +12,11 @@ namespace WebAppTest.Services.User
 {
 	public class UserService : IUserService
 	{
-		private readonly HttpClient _httpClient;
 		private readonly AppDbContext _context;
 		private readonly IDataGainService _dataGainService;
 		private readonly IGameService _gameService;
 
 		public UserService(
-		HttpClient httpClient,
 		AppDbContext context, 
 		IDataGainService dataGainService,
 		IGameService gameService
@@ -94,8 +92,7 @@ namespace WebAppTest.Services.User
 				}
 			}
 
-			await _context.SaveChangesAsync();
-
+			
 			var actualIds = actualGames
 				.Select(x => x.AppId)
 				.ToHashSet();
@@ -105,6 +102,8 @@ namespace WebAppTest.Services.User
 				.ToList();
 				
 			_context.UserGames.RemoveRange(gamesToRemove);
+			
+			await _context.SaveChangesAsync();
 			
 			return;
 		}
@@ -251,13 +250,26 @@ namespace WebAppTest.Services.User
 				dbGameIds = await _context.Games
 									.Select(x => new { x.Id, x.SteamAppId })
 									.ToDictionaryAsync(x => x.SteamAppId, x => x.Id);
+
+				missingIds = steamIds.Except(dbGameIds.Select(g => g.Key)).ToList();
+				if (missingIds.Any())
+				{
+					foreach (int id in missingIds)
+					{
+						ownedGames.RemoveAll(g => g.AppId == id); 
+					}
+				}
+				
 			}
 
 			//	 STEAM id, playtime
 			Dictionary<int, int> userGameData = new Dictionary<int, int>();
 
 			foreach (var game in ownedGames)
+			{
 				userGameData.Add(dbGameIds[game.AppId], game.PlayTime);
+			}
+				
 
 			
 
@@ -293,97 +305,6 @@ namespace WebAppTest.Services.User
 
 			return userGames;
 		}
-
-
-		//							"123 (ds3)": {rpg:0.5, sols-like:0.7}
-		public async Task<Dictionary<string, Dictionary<string, double>>> GetGameTagsStrengh(int gameId)
-		{
-			bool exists = await _context.Games.AnyAsync(g => g.SteamAppId == gameId);
-
-			
-			if (!exists)
-			{
-				await _gameService.ImportGameAsync(gameId);
-			}
-
-			GameResponse game = await _gameService.GetGame(gameId);
-
-			if (game == null)
-			{
-				return null;
-			}
-			var vector = new Dictionary<string, Dictionary<string, double>> { [gameId.ToString()] = [] };
-
-			int counter = 0;
-
-			foreach (SpyTag tag in game.Tags)
-			{
-				counter += tag.Weight;
-			}
-
-			foreach (SpyTag tag in game.Tags)
-			{
-				if (game.Tags != null)
-				{
-					double tStrengh = (double)tag.Weight / counter;
-					//				 "123 (ds3)":			 {rpg:			0.5,...}	
-					if (vector[gameId.ToString()].TryGetValue(tag.Name, out double currentValue))
-					{
-						vector[gameId.ToString()][tag.Name] = currentValue + tStrengh;
-					}
-					else
-					{//		        "123 (ds3)":	  {rpg:		0.5,...}	
-						vector[gameId.ToString()].Add(tag.Name, tStrengh);
-					}
-				}
-			}
-
-			return vector;
-		}
-
-		//public async Task<Dictionary<string, double>> GetGameTagsStrengh1(int gameId)
-		//{
-		//	bool exists = await _context.Games.AnyAsync(g => g.SteamAppId == gameId);
-
-		//	if (!exists)
-		//	{
-		//		await _gameService.ImportGameAsync(gameId);
-		//	}
-
-		//	GameResponse game = await _gameService.GetGame(gameId);
-
-		//	if (game == null)
-		//	{
-		//		return null;
-		//	}
-		//	var vector = new Dictionary<string, double>();
-
-		//	int counter = 0;
-
-		//	foreach (SpyTag tag in game.Tags)
-		//	{
-		//		counter += tag.Weight;
-		//	}
-
-		//	foreach (SpyTag tag in game.Tags)
-		//	{
-		//		if (game.Tags == null)
-		//			return new Dictionary<string, double>();
-					
-		//		double tStrengh = (double)tag.Weight / counter;
-		//		//				 "123 (ds3)":			 {rpg:			0.5,...}	
-		//		if (vector.TryGetValue(tag.Name, out double currentValue))
-		//		{
-		//			vector[tag.Name] = currentValue + tStrengh;
-		//		}
-		//		else
-		//		{//		        "123 (ds3)":	  {rpg:		0.5,...}	
-		//			vector.Add(tag.Name, tStrengh);
-		//		}
-		//	}
-
-		//	return vector;
-		//}
 
 
 		/// <summary>
@@ -481,6 +402,8 @@ namespace WebAppTest.Services.User
 			if (userProfile == null)
 			{
 				userProfile = await CreateUserProfile(userId);
+				await _context.UserProfiles.AddAsync(userProfile);
+				await _context.SaveChangesAsync();
 			}
 			else if ((currentDate - userProfile.UpdatedAt) > TimeSpan.FromDays(7))
 			{

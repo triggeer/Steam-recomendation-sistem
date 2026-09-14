@@ -9,7 +9,6 @@ namespace WebAppTest.Interfaces
 		Task<UserVectorResponse?> GetUserVector(string userId);
 		Task<List<UserGameData>> GetUserGames(string userId, List<OwnedGameDto> ownedGames);
 		Task<Dictionary<int, Dictionary<string, double>>> GetUserGameTags(string userId, List<OwnedGameDto> ownedGames);
-		Task<Dictionary<string, Dictionary<string, double>>> GetGameTagsStrengh(int gameId);
 		Task<UserProfile> CreateUserProfile(string userId);
 		Task AddUserTagVector(string userId);
 		Task UpdateUserProfile(string userIdq);

@@ -7,8 +7,10 @@ namespace WebAppTest.Interfaces
 	{
 		Task<bool> ImportGameAsync(int appId);
 		Task<GameResponse?> GetGame(int appId);
+		Task<Dictionary<string, Dictionary<string, double>>> GetGameTagsStrengh(int gameId);
 		Task UpdateAllGamePrice();
 		Task UpdateGamePrice(int appId);
 		Task UpdateAllImgAsync();
+		Task AddGameVector();
 	}
 }
