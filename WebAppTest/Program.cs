@@ -56,12 +56,11 @@ if (!app.Environment.IsDevelopment())
 	app.UseHsts();
 }
 
-////
-//using (var scope = app.Services.CreateScope())
-//{
-//	var myService = scope.ServiceProvider.GetRequiredService<IgameService>();
-//	await myService.UpdateGamesData();
-//}
+using (var scope = app.Services.CreateScope())
+{
+	var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>(); // Укажите ваш DbContext
+	dbContext.Database.Migrate(); // Эта строка сама создаст БД и применит все новые миграции
+}
 
 app.UseHttpsRedirection();
 app.UseRouting();
