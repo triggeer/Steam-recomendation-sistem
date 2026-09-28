@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebAppTest.Data;
 using WebAppTest.DTOs;
@@ -31,6 +32,7 @@ namespace WebAppTest.Controllers
 			_gameService = gameService;
 		}
 
+		[Authorize(Roles = "Admin")]
 		[HttpGet]
 		public IActionResult FindGame()
 		{
@@ -51,12 +53,13 @@ namespace WebAppTest.Controllers
 			return View(game);
 		}
 
-		
+		[Authorize(Roles = "Admin")]
 		public IActionResult AddGame()
 		{
 			return View();
 		}
 
+		[Authorize(Roles = "Admin")]
 		[HttpPost]
 		public async Task<IActionResult> ImportGame(int appId)
 		{
@@ -65,6 +68,7 @@ namespace WebAppTest.Controllers
 			return RedirectToAction("GameDetails", new {appId});
 		}
 
+		[Authorize(Roles = "Admin")]
 		[HttpGet]
 		public async Task<IActionResult> Get100ID()
 		{
@@ -74,6 +78,7 @@ namespace WebAppTest.Controllers
 			return View();
 		}
 
+		[Authorize(Roles = "Admin")]
 		public async Task<IActionResult> UpdateData(int appId)
 		{
 			//await _gameService.UpdateGame(appId);
@@ -81,6 +86,7 @@ namespace WebAppTest.Controllers
 			return View();
 		}
 
+		[Authorize(Roles = "Admin")]
 		[HttpPost]
 		public async Task<IActionResult> UpdateGame(int appId)
 		{
@@ -89,6 +95,7 @@ namespace WebAppTest.Controllers
 			return RedirectToAction("GameDetails", new { appId });
 		}
 
+		[Authorize(Roles = "Admin")]
 		public async Task<IActionResult> UpdateAllGames()
 		{
 			await _gameService.UpdateAllGamePrice();
@@ -97,12 +104,14 @@ namespace WebAppTest.Controllers
 		}
 
 
+		[Authorize(Roles = "Admin")]
 		public async Task<IActionResult> UserGameList()
 		{
 			return View();
 		}
 
 
+		[Authorize(Roles = "Admin")]
 		[HttpGet]
 		public async Task<IActionResult> FormGameTagsVector(int gameId)
 		{
@@ -114,6 +123,7 @@ namespace WebAppTest.Controllers
 			return View(vector);
 		}
 
+		[Authorize(Roles = "Admin")]
 		public async Task<IActionResult> UpdateGamesImg()
 		{
 			await _gameService.UpdateAllImgAsync();

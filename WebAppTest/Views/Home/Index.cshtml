@@ -2,83 +2,116 @@
     @{
         ViewData["Title"] = "Recommendations for Steam";
     }
+
     <link href="~/css/Home.css" rel="stylesheet" />
     <meta name="description" content="Рекомендации игр Steam на основе библиотеки пользователя">
 </head>
 
 <body>
-    <div class="text-center">
-        <h1 class="display-4">Введите ссылку на Steam профиль, <br />и мы сформируем вам список рекомендаций!</h1>
+    <main class="home-page">
 
-        <form>
-            <label for="userLink">Ссылка на профиль Steam:</label>
+        <section class="main">
+            <h1>
+                Получите рекомендации игр<br />
+                на основе вашей библиотеки Steam
+            </h1>
 
-            <input type="text"
-                   placeholder="https://steamcommunity.com/profiles/12345678912345678/"
-                   name="userLink"
-                   id="userLink"
-                   size="56" />
+            <p class="main-description">
+                Введите ссылку на свой Steam-профиль,
+                и мы подберём игры на основе ваших предпочтений.
+            </p>
 
-            <button type="submit"
-                    asp-controller="Recommendation"
-                    asp-action="ShowRecomendationsInARow"
-                    class="btn btn-primary">
-                Сформировать
-            </button>
+            <form class="recommendation-form">
 
-            <button type="submit"
-                    asp-controller="Recommendation"
-                    asp-action="ShowPreviousLists"
-                    class="btn btn-primary">
-                Предыдущие списки
-            </button>
-        </form>
+                <label for="userLink">
+                    Ссылка на Steam-профиль
+                </label>
 
-    </div>
+                <input type="text"
+                       placeholder="https://steamcommunity.com/profiles/12345678912345678/"
+                       name="userLink"
+                       id="userLink" />
 
-    <div class="faqTable">
-        <div class="leftTable">
-            <h5>
-                Перед формированием рекомендаций убедитесь что:
-            </h5>
-            <p>
+                <div class="form-buttons">
+
+                    <button type="submit"
+                            asp-controller="Recommendation"
+                            asp-action="ShowRecomendationsInARow"
+                            class="primary-btn">
+                        Сформировать рекомендации
+                    </button>
+
+                    <button type="submit"
+                            asp-controller="Recommendation"
+                            asp-action="ShowPreviousLists"
+                            class="secondary-btn">
+                        Предыдущие списки
+                    </button>
+
+                </div>
+            </form>
+        </section>
+
+
+        <section class="faq-section">
+
+            <div class="faq-card">
+                <h2>Перед началом</h2>
+
+                <p>
+                    Перед формированием рекомендаций убедитесь, что:
+                </p>
+
                 <ul>
                     <li>Профиль Steam не скрыт</li>
                     <li>Вы скопировали ссылку на профиль правильно</li>
                 </ul>
-            </p>
-        </div>
+            </div>
 
-        <div class="middleTable">
-            <h5>
-                Как формируются рекомендации?
-            </h5>
-            <p>
+
+            <div class="faq-card">
+                <h2>Как формируются рекомендации?</h2>
+
                 <ol>
-                    <li>Для каждой игры из вашей библиотеки смотрим пользовательские теги</li>
-                    <li>Через SteamSpy берутся данные о числе голосов за каждый тег</li>
-                    <li>На основе этих данных вычисляем релевантность тегов</li>
-                    <li>Далее формируем список тегов, учитывая ваши игры и проведённое в них время</li>
-                    <li>В конце выдаём для каждой игры из БД оценку, на основе совпадения тегов и популярности игры</li>
-                    <li>Получаем список игр, основанные на ваших играх, времени в них и "уровня одобрения" игры</li>
+                    <li>
+                        Для каждой игры из вашей библиотеки смотрим пользовательские теги
+                    </li>
+                    <li>
+                        Через SteamSpy берутся данные о числе голосов за каждый тег
+                    </li>
+                    <li>
+                        На основе этих данных вычисляем релевантность тегов
+                    </li>
+                    <li>
+                        Формируем список тегов с учётом ваших игр и проведённого в них времени
+                    </li>
+                    <li>
+                        Для каждой игры из БД рассчитываем оценку на основе совпадения тегов и популярности
+                    </li>
+                    <li>
+                        Получаем итоговый список рекомендаций
+                    </li>
                 </ol>
-            </p>
-        </div>
+            </div>
 
-        <div class="rightTable">
-            <h5>
-                Почему мне не рекомендуют некоторые игры?
-            </h5>
-            <p>
+
+            <div class="faq-card">
+                <h2>Почему некоторые игры не рекомендуются?</h2>
+
+                <p>
+                    На итоговую рекомендацию влияет несколько факторов:
+                </p>
+
                 <ul>
-                    <li>Для каждой игры из вашей библиотеки смотрим пользовательские теги</li>
-                    <li>Через SteamSpy берутся данные о числе голосов за каждый тег</li>
-                    <li>На основе этих данных вычисляем релевантность тегов</li>
-                    <li>Далее формируем список тегов, учитывая ваши игры и проведённое в них время</li>
-                    <li>В конце выдаём для каждой игры из БД оценку, на основе совпадения тегов и популярности игры</li>
-                    <li>Получаем список игр, основанные на ваших играх, времени в них и "уровня одобрения" игры</li>
+                    <li>теги игр из вашей библиотеки</li>
+                    <li>релевантность этих тегов</li>
+                    <li>время, проведённое в играх</li>
+                    <li>популярность игры</li>
+                    <li>совпадение характеристик игры с вашим профилем</li>
                 </ul>
-            </p>
-        </div>
-    </div>
+            </div>
+
+        </section>
+
+    </main>
 </body>
