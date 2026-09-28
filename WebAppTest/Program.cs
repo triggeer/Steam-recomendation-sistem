@@ -6,6 +6,7 @@ using WebAppTest.Interfaces;
 using WebAppTest.Services;
 using WebAppTest.Services.Recommendation;
 using WebAppTest.Services.User;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,7 +47,17 @@ builder.Services.AddSession(options =>
 	options.Cookie.IsEssential = true;
 });
 
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+	.AddCookie(options =>
+	{
+		options.LoginPath = "/Admin/Login";
+		options.AccessDeniedPath = "/Admin/AccessDenied";
+	});
+
 var app = builder.Build();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

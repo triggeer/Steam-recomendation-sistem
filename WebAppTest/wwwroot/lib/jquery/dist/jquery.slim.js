@@ -2280,7 +2280,7 @@ function setMatcher( preFilter, selector, matcher, postFilter, postFinder, postS
 		postFinder = setMatcher( postFinder, postSelector );
 	}
 	return markFunction( function( seed, results, context, xml ) {
-		var temp, i, elem, matcherOut,
+		var temp, i, elem, matcmainut,
 			preMap = [],
 			postMap = [],
 			preexisting = results.length,
@@ -2299,7 +2299,7 @@ function setMatcher( preFilter, selector, matcher, postFilter, postFinder, postS
 
 			// If we have a postFinder, or filtered seed, or non-seed postFilter
 			// or preexisting results,
-			matcherOut = postFinder || ( seed ? preFilter : preexisting || postFilter ) ?
+			matcmainut = postFinder || ( seed ? preFilter : preexisting || postFilter ) ?
 
 				// ...intermediate processing is necessary
 				[] :
@@ -2308,21 +2308,21 @@ function setMatcher( preFilter, selector, matcher, postFilter, postFinder, postS
 				results;
 
 			// Find primary matches
-			matcher( matcherIn, matcherOut, context, xml );
+			matcher( matcherIn, matcmainut, context, xml );
 		} else {
-			matcherOut = matcherIn;
+			matcmainut = matcherIn;
 		}
 
 		// Apply postFilter
 		if ( postFilter ) {
-			temp = condense( matcherOut, postMap );
+			temp = condense( matcmainut, postMap );
 			postFilter( temp, [], context, xml );
 
 			// Un-match failing elements by moving them back to matcherIn
 			i = temp.length;
 			while ( i-- ) {
 				if ( ( elem = temp[ i ] ) ) {
-					matcherOut[ postMap[ i ] ] = !( matcherIn[ postMap[ i ] ] = elem );
+					matcmainut[ postMap[ i ] ] = !( matcherIn[ postMap[ i ] ] = elem );
 				}
 			}
 		}
@@ -2331,23 +2331,23 @@ function setMatcher( preFilter, selector, matcher, postFilter, postFinder, postS
 			if ( postFinder || preFilter ) {
 				if ( postFinder ) {
 
-					// Get the final matcherOut by condensing this intermediate into postFinder contexts
+					// Get the final matcmainut by condensing this intermediate into postFinder contexts
 					temp = [];
-					i = matcherOut.length;
+					i = matcmainut.length;
 					while ( i-- ) {
-						if ( ( elem = matcherOut[ i ] ) ) {
+						if ( ( elem = matcmainut[ i ] ) ) {
 
 							// Restore matcherIn since elem is not yet a final match
 							temp.push( ( matcherIn[ i ] = elem ) );
 						}
 					}
-					postFinder( null, ( matcherOut = [] ), temp, xml );
+					postFinder( null, ( matcmainut = [] ), temp, xml );
 				}
 
 				// Move matched elements from seed to results to keep them synchronized
-				i = matcherOut.length;
+				i = matcmainut.length;
 				while ( i-- ) {
-					if ( ( elem = matcherOut[ i ] ) &&
+					if ( ( elem = matcmainut[ i ] ) &&
 						( temp = postFinder ? indexOf.call( seed, elem ) : preMap[ i ] ) > -1 ) {
 
 						seed[ temp ] = !( results[ temp ] = elem );
@@ -2357,15 +2357,15 @@ function setMatcher( preFilter, selector, matcher, postFilter, postFinder, postS
 
 		// Add elements to results, through postFinder if defined
 		} else {
-			matcherOut = condense(
-				matcherOut === results ?
-					matcherOut.splice( preexisting, matcherOut.length ) :
-					matcherOut
+			matcmainut = condense(
+				matcmainut === results ?
+					matcmainut.splice( preexisting, matcmainut.length ) :
+					matcmainut
 			);
 			if ( postFinder ) {
-				postFinder( null, results, matcherOut, xml );
+				postFinder( null, results, matcmainut, xml );
 			} else {
-				push.apply( results, matcherOut );
+				push.apply( results, matcmainut );
 			}
 		}
 	} );

@@ -1,31 +1,73 @@
 ﻿@using WebAppTest.DTOs
 @model List<PrevListDto>
 
-<head>
-	@{
-		ViewData["Title"] = "Предыдущие списки";
-	}
-	<link href="~/css/site.css" rel="stylesheet" />
-</head>
+@{
+    ViewData["Title"] = "Предыдущие списки";
+}
 
-<body>
-	@foreach (var list in Model)
-	{
-		<h1>@list.Id</h1>
+<link rel="stylesheet" href="~/css/previous-lists.css" />
 
-		<a asp-controller="Recommendation"
-		   asp-action="ShowChosenList"
-		   asp-route-listId="@($"{list.Id}")">
-			<ul class="block-list">
-				@foreach (var game in list.Games.Take(6))
-				{
-					<li>
-						<img src="@game.ImgUrl" alt="@game.Name" width=350 height=197 />
-					</li>
-				}
-			</ul>
-		</a>
+<main class="lists-page">
 
-		
-	}
-</body>
+    <section class="lists-container">
+
+        <header class="lists-header">
+            <h1>Предыдущие списки</h1>
+            <p>Ваши ранее сформированные рекомендации</p>
+        </header>
+
+
+        @foreach (var list in Model)
+        {
+            <article class="list-card">
+
+                <div class="list-card-header">
+                    <h2>Список №@list.Id</h2>
+
+                    <a asp-controller="Recommendation"
+                       asp-action="ShowChosenList"
+                       asp-route-listId="@list.Id"
+                       class="open-list-btn">
+                        Открыть список →
+                    </a>
+                </div>
+
+                <div class="games-preview">
+
+                    @for (int i = 0; i < Math.Min(list.Games.Count, 6); i++)
+                    {
+                        var game = list.Games[i];
+
+                        <a asp-controller="Recommendation"
+                           asp-action="ShowChosenList"
+                           asp-route-listId="@list.Id"
+                           asp-route-index="@i"
+                           class="game-preview">
+
+                            <img src="@game.ImgUrl"
+                                 alt="@game.Name" />
+
+                            <div class="game-name">
+                                @game.Name
+                            </div>
+
+                        </a>
+                    }
+
+                </div>
+
+            </article>
+        }
+
+
+        @if (Model.Count == 0)
+        {
+            <div class="empty-lists">
+                <h2>Списков пока нет</h2>
+                <p>Сформированные рекомендации появятся здесь.</p>
+            </div>
+        }
+
+    </section>
+
+</main>

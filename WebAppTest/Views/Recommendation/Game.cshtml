@@ -6,92 +6,120 @@
 	@{
 		ViewData["Title"] = "Рекомендации";
 	}
+
 	<link rel="stylesheet" href="~/css/recommendation.css">
 	<meta name="description" content="Рекомендации игр Steam на основе библиотеки пользователя">
 </head>
 
 <body>
-	<h1>@Model.Game.Name</h1>
 
-	<p>
-		@Html.Raw(Model.Game.DetailedDescription)
+	<main class="game-page">
 
-	</p>
+		<section class="game-card">
 
-	<h4>
-		Теги:
-	</h4>
+			<header class="game-header">
+				<h1>@Model.Game.Name</h1>
 
-	<h6>
-		<ul>
-			@{
-				foreach (var tag in @Model.Game.GameTags.OrderByDescending(x => x.Strength))
+				<div class="game-counter">
+					Игра @(Model.Index + 1) из @Model.ListSize
+				</div>
+			</header>
+
+
+			<section class="description">
+				<h2>Описание</h2>
+
+				<div class="description-text">
+					@Html.Raw(Model.Game.DetailedDescription)
+				</div>
+			</section>
+
+
+			<section class="tags-section">
+				<h2>Теги</h2>
+
+				<div class="tags">
+					@foreach (var tag in Model.Game.GameTags.OrderByDescending(x => x.Strength))
+					{
+						<span class="tag"
+							  title="@($"{tag.Strength * 100:F2}%")">
+							@tag.Tag.Name
+						</span>
+					}
+				</div>
+
+				<p class="tag-hint">
+					Наведите курсор на тег, чтобы увидеть его релевантность для игры.
+				</p>
+			</section>
+
+
+			<div class="game-actions">
+				@if (Model.Index > 0)
 				{
-					<li title="@($"{tag.Strength * 100:F2}%")">@tag.Tag.Name</li>
+					@if (Model.ListId != null)
+					{
+						<a asp-action="ShowChosenList"
+						asp-controller="Recommendation"
+						asp-route-listId="@Model.ListId"
+						asp-route-index="@(Model.Index - 1)"
+						class="move-btn left-btn @(Model.Index <= 0 ? "disabled" : "")">
+							← Предыдущая
+						</a>
+					}
+					else
+					{
+						<a asp-action="RecomendationsInARow"
+						asp-controller="Recommendation"
+						asp-route-index="@(Model.Index - 1)"
+						class="move-btn left-btn @(Model.Index <= 0 ? "disabled" : "")">
+							← Предыдущая
+						</a>
+					}
+
 				}
-			}
-		</ul>
-		<small> Вы можете навестись на тег, чтобы увидеть % пользователей посчитавших его релевантным для игры</small>
-	</h6>
 
-	
-	@if (Model.Index > 0)
-	{
-		if (Model.ListId != null)
-		{
-			<a asp-action="ShowChosenList"
-				asp-controller="Recommendation"
-				asp-route-listId="@Model.ListId"
-				asp-route-index="@(Model.Index - 1)">
-				<button class="move-btn left-btn">
-					Предыдущая игра
-				</button>
-			</a>
-		}
-		else
-		{
-			<a asp-action="RecomendationsInARow"
-			   asp-controller="Recommendation"
-			   asp-route-index="@(Model.Index - 1)">
-				<button class="move-btn left-btn">
-					Предыдущая игра
-				</button>
-			</a>
-		}
-	}
-	
-	@if (Model.Index + 1 < Model.ListSize)
-	{
-		if (Model.ListId != null)
-		{
-			<a asp-action="ShowChosenList"
-			   asp-controller="Recommendation"
-			   asp-route-listId="@Model.ListId"
-			   asp-route-index="@(Model.Index + 1)">
-				<button class="move-btn right-btn">
-					Следующая игра
-				</button>
-			</a>
-		}
-		else
-		{
-			<a asp-action="RecomendationsInARow"
-				asp-controller="Recommendation"
-			   asp-route-index="@(Model.Index + 1)">
-				<button class="move-btn right-btn">
-					Следующая игра
-				</button>
-			</a>
-		}
-	}
+				<a href="https://store.steampowered.com/app/@Model.Game.SteamAppId"
+				   target="_blank"
+				   rel="noopener noreferrer"
+				   class="store-btn">
 
-	<a href="https://store.steampowered.com/app/@Model.Game.SteamAppId"
-	   target="_blank"
-	   class="btn store-btn">
-		<img src="~/images/steam-logo.png" class="logo" alt="Логотип Steam" />
-		Перейти в магазин
-	</a>
+					<img src="~/images/steam-logo.png"
+						 class="logo"
+						 alt="Логотип Steam" />
+
+					<span>Открыть в Steam</span>
+				</a>
+
+
+				@if (Model.Index + 1 < Model.ListSize)
+				{
+					if (Model.ListId != null)
+					{
+						<a asp-action="ShowChosenList"
+						   asp-controller="Recommendation"
+						   asp-route-listId="@Model.ListId"
+						   asp-route-index="@(Model.Index + 1)"
+						   class="move-btn right-btn">
+							Следующая →
+						</a>
+					}
+					else
+					{
+						<a asp-action="RecomendationsInARow"
+						   asp-controller="Recommendation"
+						   asp-route-index="@(Model.Index + 1)"
+						   class="move-btn right-btn">
+							Следующая →
+						</a>
+					}
+				}
+
+			</div>
+
+		</section>
+
+	</main>
+
 </body>
-
-
 </html>
